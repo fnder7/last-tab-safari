@@ -136,3 +136,106 @@ test('unknown messages get no reply', async () => {
   createController(f.browser);
   assert.equal(await f.send({ type: 'nope' }, sender(10)), undefined);
 });
+
+// --- previews -------------------------------------------------------------
+
+function withTimers() {
+  const pending: Array<() => void> = [];
+  return {
+    schedule: (fn: () => void) => void pending.push(fn),
+    async runAll(c: { idle(): Promise<void> }) {
+      while (pending.length) pending.shift()!();
+      await c.idle();
+      await new Promise((r) => setTimeout(r, 0));
+    },
+  };
+}
+
+const setActive = (f: FakeBrowser, id: number) => {
+  for (const t of f.tabs) if (t.windowId === 1) t.active = t.id === id;
+};
+
+test('captures after activation when tab still active', async () => {
+  const f = twoTabWindow();
+  const timers = withTimers();
+  let calls = 0;
+  const capture = async (w: number) => {
+    calls += 1;
+    if (calls > 1) throw new Error('later capture fails');
+    return `data:w${w}`;
+  };
+  const c = createController(f.browser, { capture, schedule: timers.schedule });
+  setActive(f, 20);
+  activate(f, 1, 20);
+  await timers.runAll(c);
+  const { tabs } = await list(f, sender(20));
+  assert.equal(tabs.find((t) => t.id === 20)?.preview, 'data:w1');
+});
+
+test('skips capture if tab no longer active', async () => {
+  const f = twoTabWindow();
+  const timers = withTimers();
+  const captured: number[] = [];
+  const capture = async (w: number) => {
+    captured.push(w);
+    throw new Error('no capture');
+  };
+  const c = createController(f.browser, { capture, schedule: timers.schedule });
+  activate(f, 1, 20); // fake keeps 10 active
+  await timers.runAll(c);
+  assert.deepEqual(captured, []);
+  const { tabs } = await list(f, sender(20));
+  assert.equal(tabs.find((t) => t.id === 20)?.preview, null);
+});
+
+test('captures after a page finishes loading in the active tab', async () => {
+  const f = twoTabWindow();
+  const timers = withTimers();
+  const c = createController(f.browser, { capture: async () => 'data:loaded', schedule: timers.schedule });
+  f.fire('tabs.onUpdated', 10, { status: 'complete' }, { id: 10, windowId: 1, active: true });
+  f.fire('tabs.onUpdated', 20, { status: 'complete' }, { id: 20, windowId: 1, active: false });
+  await timers.runAll(c);
+  const { tabs } = await list(f, sender(20));
+  assert.equal(tabs.find((t) => t.id === 10)?.preview, 'data:loaded');
+});
+
+test('capture failure leaves no preview', async () => {
+  const f = twoTabWindow();
+  const timers = withTimers();
+  const c = createController(f.browser, {
+    capture: async () => {
+      throw new Error('restricted page');
+    },
+    schedule: timers.schedule,
+  });
+  activate(f, 1, 10);
+  await timers.runAll(c);
+  const { tabs } = await list(f);
+  assert.ok(tabs.every((t) => t.preview === null));
+});
+
+test('closing a tab drops its preview', async () => {
+  const f = twoTabWindow();
+  const timers = withTimers();
+  let fail = false;
+  const capture = async () => {
+    if (fail) throw new Error('off');
+    return 'data:x';
+  };
+  const c = createController(f.browser, { capture, schedule: timers.schedule });
+  f.fire('tabs.onUpdated', 20, { status: 'complete' }, { id: 20, windowId: 1, active: true });
+  await timers.runAll(c);
+  fail = true;
+  f.fire('tabs.onRemoved', 20, { windowId: 1, isWindowClosing: false });
+  f.tabs.push({ ...tab(20, 1) }); // same id reappears in the query result
+  await c.idle();
+  const { tabs } = await list(f);
+  assert.equal(tabs.find((t) => t.id === 20)?.preview, null);
+});
+
+test('menu:list captures the sender tab', async () => {
+  const f = twoTabWindow();
+  createController(f.browser, { capture: async (w) => `data:w${w}`, schedule: () => {} });
+  const { tabs } = await list(f, sender(10));
+  assert.equal(tabs.find((t) => t.id === 10)?.preview, 'data:w1');
+});
