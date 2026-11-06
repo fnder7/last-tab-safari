@@ -5,6 +5,7 @@ import { cp, rm } from 'node:fs/promises';
 const ENTRIES = {
   background: 'src/background/index.ts',
   content: 'src/content/index.ts',
+  options: 'src/options/index.ts',
 };
 
 try {

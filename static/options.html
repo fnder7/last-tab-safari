@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>Last Tab Settings</title>
+  <style>
+    body { font: 13px -apple-system, system-ui, sans-serif; margin: 24px; max-width: 460px; }
+    h1 { font-size: 17px; margin: 0 0 16px; }
+    .row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+    label { width: 70px; color: GrayText; }
+    select, button { font: inherit; padding: 4px 10px; min-width: 140px; }
+    button.recording { outline: 2px solid #0a84ff; }
+    .summary { margin-top: 18px; line-height: 1.7; }
+    .summary strong { font-weight: 600; }
+    .error { color: #ff453a; min-height: 1.4em; }
+  </style>
+</head>
+<body>
+  <h1>Last Tab shortcut</h1>
+  <div class="row">
+    <label for="modifier">Modifier</label>
+    <select id="modifier"></select>
+  </div>
+  <div class="row">
+    <label for="key">Key</label>
+    <button id="key" type="button"></button>
+  </div>
+  <div class="error" id="error"></div>
+  <div class="summary">
+    <div>Open and move forward: <strong id="forward"></strong></div>
+    <div>Move back: <strong id="reverse"></strong></div>
+    <div>Release the modifier to switch tabs.</div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

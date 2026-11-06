@@ -18,6 +18,8 @@
 		84C21081309E5F7A00B07178 /* Last Tab Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 84C21080309E5F7A00B07178 /* Last Tab Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		84C21086309E5F7A00B07178 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C21085309E5F7A00B07178 /* SafariWebExtensionHandler.swift */; };
 		84C21095309E5F7B00B07178 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C21092309E5F7B00B07178 /* background.js */; };
+		84C210E2309E5F7B00B07178 /* options.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C210E1309E5F7B00B07178 /* options.js */; };
+		84C210E4309E5F7B00B07178 /* options.html in Resources */ = {isa = PBXBuildFile; fileRef = 84C210E3309E5F7B00B07178 /* options.html */; };
 		84C210D2309E5F7B00B07178 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C210D1309E5F7B00B07178 /* content.js */; };
 		84C21096309E5F7B00B07178 /* images in Resources */ = {isa = PBXBuildFile; fileRef = 84C21093309E5F7B00B07178 /* images */; };
 		84C21097309E5F7B00B07178 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 84C21094309E5F7B00B07178 /* manifest.json */; };
@@ -62,6 +64,8 @@
 		84C21085309E5F7A00B07178 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 		84C21087309E5F7A00B07178 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		84C21092309E5F7B00B07178 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../../dist/background.js; sourceTree = "<group>"; };
+		84C210E1309E5F7B00B07178 /* options.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = options.js; path = ../../dist/options.js; sourceTree = "<group>"; };
+		84C210E3309E5F7B00B07178 /* options.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = options.html; path = ../../dist/options.html; sourceTree = "<group>"; };
 		84C210D1309E5F7B00B07178 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = ../../dist/content.js; sourceTree = "<group>"; };
 		84C21093309E5F7B00B07178 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../../dist/images; sourceTree = "<group>"; };
 		84C21094309E5F7B00B07178 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../dist/manifest.json; sourceTree = "<group>"; };
@@ -141,6 +145,8 @@
 			isa = PBXGroup;
 			children = (
 				84C21092309E5F7B00B07178 /* background.js */,
+				84C210E1309E5F7B00B07178 /* options.js */,
+				84C210E3309E5F7B00B07178 /* options.html */,
 				84C210D1309E5F7B00B07178 /* content.js */,
 				84C21093309E5F7B00B07178 /* images */,
 				84C21094309E5F7B00B07178 /* manifest.json */,
@@ -252,6 +258,8 @@
 				84C21096309E5F7B00B07178 /* images in Resources */,
 				84C21097309E5F7B00B07178 /* manifest.json in Resources */,
 				84C21095309E5F7B00B07178 /* background.js in Resources */,
+				84C210E2309E5F7B00B07178 /* options.js in Resources */,
+				84C210E4309E5F7B00B07178 /* options.html in Resources */,
 				84C210D2309E5F7B00B07178 /* content.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

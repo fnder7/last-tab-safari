@@ -29,5 +29,8 @@
       "run_at": "document_start",
       "all_frames": false
     }
-  ]
+  ],
+  "options_ui": {
+    "page": "options.html"
+  }
 }
