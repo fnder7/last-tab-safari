@@ -43,3 +43,14 @@ body.state-off :is(.state-on, .state-unknown) {
 button {
     font-size: 1em;
 }
+
+.usage p {
+    margin: 0.4em 0;
+}
+
+kbd {
+    font: inherit;
+    padding: 0 0.35em;
+    border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+    border-radius: 4px;
+}
