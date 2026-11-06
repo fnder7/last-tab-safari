@@ -28,14 +28,15 @@ A quick Option+Q tap jumps straight back to the previous tab.
 
 ```bash
 npm install
-xcodebuild -project "Last Tab/Last Tab.xcodeproj" -scheme "Last Tab" -configuration Debug -derivedDataPath build build
+xcodebuild -project "Last Tab/Last Tab.xcodeproj" -scheme "Last Tab" -configuration Debug -derivedDataPath build -allowProvisioningUpdates build
 open "build/Build/Products/Debug/Last Tab.app"
 ```
 
-The Debug build is signed ad hoc. In Safari → Settings → Developer, turn on
-**Allow unsigned extensions**. This resets every time Safari quits. Then
-enable Last Tab in Settings → Extensions. To avoid the reset, choose your
-Personal Team under Xcode → target → Signing & Capabilities.
+The project is signed with a Personal Team (`DEVELOPMENT_TEAM` in the Xcode project). Pass
+`-allowProvisioningUpdates` to `xcodebuild` the first time so Xcode can create the certificate and profile.
+A stable signature lets Safari remember the extension and its website access between builds, so
+"Allow unsigned extensions" is not needed. To build with a different Apple ID, pick your own team under
+Xcode → target → Signing & Capabilities for both targets.
 
 ## Test
 

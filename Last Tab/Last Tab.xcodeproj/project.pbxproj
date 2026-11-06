@@ -18,11 +18,11 @@
 		84C21081309E5F7A00B07178 /* Last Tab Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 84C21080309E5F7A00B07178 /* Last Tab Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		84C21086309E5F7A00B07178 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C21085309E5F7A00B07178 /* SafariWebExtensionHandler.swift */; };
 		84C21095309E5F7B00B07178 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C21092309E5F7B00B07178 /* background.js */; };
-		84C210E2309E5F7B00B07178 /* options.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C210E1309E5F7B00B07178 /* options.js */; };
-		84C210E4309E5F7B00B07178 /* options.html in Resources */ = {isa = PBXBuildFile; fileRef = 84C210E3309E5F7B00B07178 /* options.html */; };
-		84C210D2309E5F7B00B07178 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C210D1309E5F7B00B07178 /* content.js */; };
 		84C21096309E5F7B00B07178 /* images in Resources */ = {isa = PBXBuildFile; fileRef = 84C21093309E5F7B00B07178 /* images */; };
 		84C21097309E5F7B00B07178 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 84C21094309E5F7B00B07178 /* manifest.json */; };
+		84C210D2309E5F7B00B07178 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C210D1309E5F7B00B07178 /* content.js */; };
+		84C210E2309E5F7B00B07178 /* options.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C210E1309E5F7B00B07178 /* options.js */; };
+		84C210E4309E5F7B00B07178 /* options.html in Resources */ = {isa = PBXBuildFile; fileRef = 84C210E3309E5F7B00B07178 /* options.html */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,11 +64,11 @@
 		84C21085309E5F7A00B07178 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 		84C21087309E5F7A00B07178 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		84C21092309E5F7B00B07178 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../../dist/background.js; sourceTree = "<group>"; };
-		84C210E1309E5F7B00B07178 /* options.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = options.js; path = ../../dist/options.js; sourceTree = "<group>"; };
-		84C210E3309E5F7B00B07178 /* options.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = options.html; path = ../../dist/options.html; sourceTree = "<group>"; };
-		84C210D1309E5F7B00B07178 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = ../../dist/content.js; sourceTree = "<group>"; };
 		84C21093309E5F7B00B07178 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../../dist/images; sourceTree = "<group>"; };
 		84C21094309E5F7B00B07178 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../dist/manifest.json; sourceTree = "<group>"; };
+		84C210D1309E5F7B00B07178 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = ../../dist/content.js; sourceTree = "<group>"; };
+		84C210E1309E5F7B00B07178 /* options.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = options.js; path = ../../dist/options.js; sourceTree = "<group>"; };
+		84C210E3309E5F7B00B07178 /* options.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = options.html; path = ../../dist/options.html; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -461,6 +461,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Last Tab Extension/Info.plist";
@@ -477,8 +478,8 @@
 					"-framework",
 					SafariServices,
 				);
+				DEVELOPMENT_TEAM = 2K54TT5K2K;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.fnder77.LastTab.Extension;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -496,6 +497,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Last Tab Extension/Info.plist";
@@ -512,8 +514,8 @@
 					"-framework",
 					SafariServices,
 				);
+				DEVELOPMENT_TEAM = 2K54TT5K2K;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.fnder77.LastTab.Extension;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -532,6 +534,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2K54TT5K2K;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -573,6 +576,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2K54TT5K2K;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
