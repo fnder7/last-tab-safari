@@ -1,12 +1,13 @@
 // Pure shortcut model: matching keyboard events, validation and display labels.
 
-export type ModifierName = 'alt' | 'ctrl' | 'meta';
+/** Command is deliberately absent: Safari handles ⌘ shortcuts (⌘Q quits) before pages see them. */
+export type ModifierName = 'alt' | 'ctrl';
 export type Shortcut = { modifier: ModifierName; code: string };
 export type KeyLike = Pick<KeyboardEvent, 'code' | 'key' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
 
 type ModifierInfo = {
-  prop: 'altKey' | 'ctrlKey' | 'metaKey';
-  key: 'Alt' | 'Control' | 'Meta';
+  prop: 'altKey' | 'ctrlKey';
+  key: 'Alt' | 'Control';
   symbol: string;
   name: string;
 };
@@ -14,7 +15,6 @@ type ModifierInfo = {
 export const MODIFIERS: Record<ModifierName, ModifierInfo> = {
   alt: { prop: 'altKey', key: 'Alt', symbol: '⌥', name: 'Option' },
   ctrl: { prop: 'ctrlKey', key: 'Control', symbol: '⌃', name: 'Control' },
-  meta: { prop: 'metaKey', key: 'Meta', symbol: '⌘', name: 'Command' },
 };
 
 export const DEFAULT_SHORTCUT: Shortcut = { modifier: 'alt', code: 'KeyQ' };
@@ -39,12 +39,13 @@ export function isAllowedCode(code: string): boolean {
 export function isShortcut(value: unknown): value is Shortcut {
   if (!value || typeof value !== 'object') return false;
   const { modifier, code } = value as Partial<Shortcut>;
-  return typeof modifier === 'string' && modifier in MODIFIERS && typeof code === 'string' && isAllowedCode(code);
+  return typeof modifier === 'string' && Object.hasOwn(MODIFIERS, modifier) && typeof code === 'string' && isAllowedCode(code);
 }
 
 /** 'forward' for the shortcut, 'reverse' for the shortcut + Shift, otherwise null. */
 export function matches(event: KeyLike, shortcut: Shortcut): 'forward' | 'reverse' | null {
   if (event.code !== shortcut.code) return null;
+  if (event.metaKey) return null;
   for (const [name, info] of Object.entries(MODIFIERS) as Array<[ModifierName, ModifierInfo]>) {
     if (event[info.prop] !== (name === shortcut.modifier)) return null;
   }

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_SHORTCUT,
+  MODIFIERS,
   isAllowedCode,
   isModifierRelease,
   isShortcut,
@@ -38,6 +39,11 @@ test('no modifier is null', () => {
 
 test('extra modifier is null', () => {
   assert.equal(matches(key({ altKey: true, metaKey: true }), DEFAULT_SHORTCUT), null);
+  assert.equal(matches(key({ altKey: true, ctrlKey: true }), DEFAULT_SHORTCUT), null);
+});
+
+test('Command is not an available modifier', () => {
+  assert.deepEqual(Object.keys(MODIFIERS).sort(), ['alt', 'ctrl']);
 });
 
 test('other code is null', () => {
@@ -51,7 +57,7 @@ test('matches by code regardless of key', () => {
 test('modifier release detected', () => {
   assert.equal(isModifierRelease({ key: 'Alt' }, DEFAULT_SHORTCUT), true);
   assert.equal(isModifierRelease({ key: 'Shift' }, DEFAULT_SHORTCUT), false);
-  assert.equal(isModifierRelease({ key: 'Meta' }, { modifier: 'meta', code: 'KeyE' }), true);
+  assert.equal(isModifierRelease({ key: 'Control' }, { modifier: 'ctrl', code: 'KeyE' }), true);
 });
 
 test('isAllowedCode', () => {
@@ -64,11 +70,12 @@ test('isShortcut', () => {
   assert.equal(isShortcut({ modifier: 'shift', code: 'KeyQ' }), false);
   assert.equal(isShortcut({ modifier: 'alt', code: 'Tab' }), false);
   assert.equal(isShortcut(null), false);
+  assert.equal(isShortcut({ modifier: 'meta', code: 'KeyQ' }), false); // ⌘ keys belong to Safari
 });
 
 test('label', () => {
   assert.equal(label({ modifier: 'alt', code: 'KeyQ' }), '⌥ Option + Q');
   assert.equal(label({ modifier: 'alt', code: 'KeyQ' }, { shift: true }), '⌥ Option + ⇧ Shift + Q');
   assert.equal(label({ modifier: 'ctrl', code: 'Digit1' }), '⌃ Control + 1');
-  assert.equal(label({ modifier: 'meta', code: 'Comma' }), '⌘ Command + ,');
+  assert.equal(label({ modifier: 'ctrl', code: 'Comma' }), '⌃ Control + ,');
 });

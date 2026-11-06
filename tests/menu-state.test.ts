@@ -114,3 +114,30 @@ test('ignored actions return same state', () => {
   assert.equal(stale.state, open);
   assert.deepEqual(stale.effects, []);
 });
+
+test('two quick taps before the list arrives go there and back', () => {
+  const { state, effects } = run([fwd, { type: 'release' }, fwd, { type: 'release' }, loaded()]);
+  assert.equal(state.phase, 'closed');
+  assert.deepEqual(effects, [{ type: 'requestList' }]); // B then back to A: no switch
+});
+
+test('quick tap then a hold opens from the new current tab', () => {
+  const { state, effects } = run([fwd, { type: 'release' }, fwd, loaded()]);
+  assert.equal(state.phase, 'open');
+  const render = effects.at(-1);
+  assert.ok(render && render.type === 'render');
+  assert.deepEqual(render.tabs.map((t) => t.id), [2, 1, 3]);
+  assert.equal(render.index, 1);
+});
+
+test('tap then hold ending on the original tab does not switch', () => {
+  // The real tab never changed while loading, so landing on tab 1 again means "stay".
+  const { effects } = run([fwd, { type: 'release' }, fwd, loaded(), { type: 'release' }]);
+  assert.deepEqual(effects.at(-1), { type: 'close' });
+  assert.ok(!effects.some((e) => e.type === 'activate'));
+});
+
+test('tap then hold stepping further switches to that tab', () => {
+  const { effects } = run([fwd, { type: 'release' }, fwd, loaded(), fwd, { type: 'release' }]);
+  assert.deepEqual(effects.slice(-2), [{ type: 'close' }, { type: 'activate', tabId: 3 }]);
+});

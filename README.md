@@ -7,7 +7,7 @@ move left (arrows work too), and release **⌥ Option** to switch. **Esc** cance
 A quick Option+Q tap jumps straight back to the previous tab.
 
 - The shortcut can be changed in Safari → Settings → Extensions → Last Tab → Settings
-  (Option, Control or Command plus a letter, digit or punctuation key). Shift reverses automatically.
+  (Option or Control plus a letter, digit or punctuation key; Command is excluded because Safari owns ⌘ shortcuts). Shift reverses automatically.
 - Ctrl+Tab is not possible: Safari keeps it for itself and never passes it to extensions or pages.
 - The switcher runs inside web pages, so it needs **Always Allow on Every Website**. It doesn't work on the
   Start Page, in the address bar, on Safari's own pages, or while focus is inside an iframe.
