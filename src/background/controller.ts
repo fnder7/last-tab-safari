@@ -1,12 +1,17 @@
-// Wires browser tab/window/command events to the pure MRU state (mru.ts).
-import type { Browser } from 'webextension-polyfill';
+// Wires browser tab/window events to the pure MRU state (mru.ts) and answers
+// the content script's menu messages.
+import type { Browser, Runtime, Tabs } from 'webextension-polyfill';
 import * as mru from './mru.ts';
 import type { MruState } from './mru.ts';
+import type { ListResponse, MenuTab, Request } from '../shared/messages.ts';
 import { MRU_STATE } from '../shared/storage-keys.ts';
 
-const COMMAND = 'toggle-last-tab';
-
-export type ControllerOptions = Record<string, never>;
+export type ControllerOptions = {
+  /** Captures the visible tab of a window as a data URL (used from Task 2). */
+  capture?: (windowId: number) => Promise<string>;
+  /** Defers work; defaults to setTimeout (used from Task 2). */
+  schedule?: (fn: () => void, ms: number) => void;
+};
 
 export type Controller = {
   /** Resolves once state is loaded from storage and open windows are seeded. */
@@ -15,6 +20,22 @@ export type Controller = {
   idle(): Promise<void>;
 };
 
+const toMenuTab = (tab: Tabs.Tab): MenuTab => ({
+  id: tab.id!,
+  title: tab.title ?? '',
+  favIconUrl: tab.favIconUrl ?? null,
+  preview: null,
+});
+
+/** MRU ids first (only those still open), then open tabs we have not seen, in tab-bar order. */
+function reconcile(order: readonly number[], openTabs: Tabs.Tab[]): Tabs.Tab[] {
+  const byId = new Map(openTabs.map((t) => [t.id!, t]));
+  const known = order.filter((id) => byId.has(id)).map((id) => byId.get(id)!);
+  const seen = new Set(order);
+  const unseen = openTabs.filter((t) => !seen.has(t.id!)).sort((a, b) => a.index - b.index);
+  return [...known, ...unseen];
+}
+
 export function createController(browser: Browser, _options: ControllerOptions = {}): Controller {
   let state: MruState = mru.emptyState();
 
@@ -22,7 +43,7 @@ export function createController(browser: Browser, _options: ControllerOptions =
 
   async function load(): Promise<void> {
     const data = await browser.storage.session.get(MRU_STATE);
-    state = (data[MRU_STATE] as MruState | undefined) ?? mru.emptyState();
+    state = mru.normalize(data[MRU_STATE]);
     // Seed every open window (e.g. restored at launch) that has no entry yet.
     const activeTabs = await browser.tabs.query({ active: true });
     const unseeded = activeTabs.filter((t) => !(String(t.windowId) in state));
@@ -46,20 +67,18 @@ export function createController(browser: Browser, _options: ControllerOptions =
       await save();
     });
 
-  async function toggle(): Promise<void> {
-    const win = await browser.windows.getLastFocused();
-    if (!win || win.id === undefined) return;
-    const target = mru.targetFor(state, win.id);
-    if (target === null) return;
+  async function listMenu(windowId: number): Promise<ListResponse> {
+    await chain; // reflect every activation queued before the request
+    const openTabs = await browser.tabs.query({ windowId });
+    return { tabs: reconcile(mru.orderFor(state, windowId), openTabs).map(toMenuTab) };
+  }
+
+  async function activateTab(tabId: number): Promise<void> {
     try {
-      await browser.tabs.update(target, { active: true });
-      // Record the switch now, so a second press queued before Safari's
-      // onActivated arrives goes back instead of repeating this switch.
-      state = mru.onActivated(state, win.id, target);
+      await browser.tabs.update(tabId, { active: true });
     } catch {
-      state = mru.onTabRemoved(state, win.id, target);
+      // The tab was closed while the menu was open: nothing to switch to.
     }
-    await save();
   }
 
   // Registered synchronously so they survive the background being unloaded.
@@ -72,11 +91,18 @@ export function createController(browser: Browser, _options: ControllerOptions =
   browser.tabs.onDetached.addListener((tabId, { oldWindowId }) => {
     apply((s) => mru.onTabRemoved(s, oldWindowId, tabId));
   });
+  browser.tabs.onUpdated.addListener(() => {
+    // Preview capture hooks in here (Task 2).
+  });
   browser.windows.onRemoved.addListener((windowId) => {
     apply((s) => mru.onWindowRemoved(s, windowId));
   });
-  browser.commands.onCommand.addListener((command) => {
-    if (command === COMMAND) enqueue(toggle);
+  browser.runtime.onMessage.addListener((message: unknown, sender: Runtime.MessageSender) => {
+    const request = message as Request;
+    const windowId = sender.tab?.windowId;
+    if (request?.type === 'menu:list' && windowId !== undefined) return listMenu(windowId);
+    if (request?.type === 'menu:activate') return activateTab(request.tabId);
+    return undefined;
   });
 
   async function idle(): Promise<void> {

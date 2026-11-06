@@ -3,13 +3,15 @@
   "name": "Last Tab",
   "version": "1.0.0",
   "description": "Switch to the previously active tab with a keyboard shortcut.",
-  "permissions": ["storage"],
-  "icons": { "128": "images/icon-128.png" },
-  "background": { "scripts": ["background.js"] },
-  "commands": {
-    "toggle-last-tab": {
-      "suggested_key": { "default": "Alt+Q", "mac": "Alt+Q" },
-      "description": "Switch to the last used tab"
-    }
+  "permissions": [
+    "storage"
+  ],
+  "icons": {
+    "128": "images/icon-128.png"
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
   }
 }
