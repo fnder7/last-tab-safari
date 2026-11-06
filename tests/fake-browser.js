@@ -16,7 +16,7 @@ export function createFakeBrowser({ tabs = [], focusedWindowId = 1, sessionData 
       onRemoved: event('tabs.onRemoved'),
       onDetached: event('tabs.onDetached'),
       async query({ active, windowId }) {
-        return tabs.filter((t) => t.active === active && t.windowId === windowId);
+        return tabs.filter((t) => t.active === active && (windowId === undefined || t.windowId === windowId));
       },
       async update(id, props) {
         updateCalls.push([id, props]);

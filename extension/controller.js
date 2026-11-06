@@ -15,13 +15,12 @@
     async function load() {
       const data = await browser.storage.session.get(STORAGE_KEY);
       state = data[STORAGE_KEY] ?? mru.emptyState();
-      const win = await browser.windows.getLastFocused();
-      if (win && String(win.id) in state) return;
-      const [active] = win ? await browser.tabs.query({ active: true, windowId: win.id }) : [];
-      if (active) {
-        state = mru.onActivated(state, win.id, active.id);
-        await save();
-      }
+      // Seed every open window (e.g. restored at launch) that has no entry yet.
+      const activeTabs = await browser.tabs.query({ active: true });
+      const unseeded = activeTabs.filter((t) => !(String(t.windowId) in state));
+      if (unseeded.length === 0) return;
+      for (const t of unseeded) state = mru.onActivated(state, t.windowId, t.id);
+      await save();
     }
 
     // Every event runs strictly after the previous one, starting after load().
@@ -43,10 +42,13 @@
       if (target === null) return;
       try {
         await browser.tabs.update(target, { active: true });
+        // Record the switch now, so a second press queued before Safari's
+        // onActivated arrives goes back instead of repeating this switch.
+        state = mru.onActivated(state, win.id, target);
       } catch {
         state = mru.onTabRemoved(state, win.id, target);
-        await save();
       }
+      await save();
     }
 
     // Registered synchronously so they survive the background being unloaded.

@@ -126,3 +126,29 @@ test('serializes events', async () => {
   await c.idle();
   assert.deepEqual(f.session.mruState['1'], { current: 30, previous: 20 });
 });
+
+test('two quick presses go there and back', async () => {
+  const f = twoTabWindow({ sessionData: { mruState: { 1: { current: 20, previous: 10 } } } });
+  const c = createController(f.browser);
+  f.fire('commands.onCommand', CMD);
+  f.fire('commands.onCommand', CMD);
+  await c.idle();
+  assert.deepEqual(f.updateCalls, [[10, { active: true }], [20, { active: true }]]);
+});
+
+test('seeds every window at startup, not just the focused one', async () => {
+  const f = createFakeBrowser({
+    tabs: [
+      { id: 10, windowId: 1, active: true },
+      { id: 30, windowId: 2, active: true },
+      { id: 40, windowId: 2, active: false },
+    ],
+    focusedWindowId: 2,
+  });
+  const c = createController(f.browser);
+  activate(f, 2, 40);
+  f.fire('commands.onCommand', CMD);
+  await c.idle();
+  assert.deepEqual(f.updateCalls, [[30, { active: true }]]);
+  assert.equal(f.session.mruState['1'].current, 10);
+});
