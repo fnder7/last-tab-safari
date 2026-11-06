@@ -2,5 +2,15 @@
   "name": "last-tab",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test tests/" }
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "tsc --noEmit && node --import tsx --test tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/webextension-polyfill": "^0.12.6",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
 }

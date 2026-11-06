@@ -1,8 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import '../extension/mru.js';
-
-const { emptyState, onActivated, onTabRemoved, onWindowRemoved, targetFor } = globalThis.LastTabMRU;
+import { emptyState, onActivated, onTabRemoved, onWindowRemoved, targetFor, type MruState } from '../src/background/mru.ts';
 
 test('toggle: A then B targets A; activating A targets B', () => {
   let s = onActivated(onActivated(emptyState(), 1, 10), 1, 20);
@@ -28,7 +26,7 @@ test('closing previous clears target', () => {
 
 test('closing current keeps previous for next activation', () => {
   // tabs A=10, B=20, C=30; on C with previous B; close C, Safari activates A
-  let s = [10, 20, 30].reduce((st, t) => onActivated(st, 1, t), emptyState());
+  let s = [10, 20, 30].reduce((st: MruState, t) => onActivated(st, 1, t), emptyState());
   s = onActivated(onTabRemoved(s, 1, 30), 1, 10);
   assert.equal(targetFor(s, 1), 20);
 });

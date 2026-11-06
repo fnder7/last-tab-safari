@@ -1,14 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import '../extension/mru.js';
-import '../extension/controller.js';
-import { createFakeBrowser } from './fake-browser.js';
-
-const { createController } = globalThis.LastTabController;
+import { createController } from '../src/background/controller.ts';
+import { createFakeBrowser, type FakeBrowser } from './fake-browser.ts';
 const CMD = 'toggle-last-tab';
-const activate = (f, windowId, tabId) => f.fire('tabs.onActivated', { tabId, windowId });
+const activate = (f: FakeBrowser, windowId: number, tabId: number) => f.fire('tabs.onActivated', { tabId, windowId });
 
-function twoTabWindow(extra = {}) {
+function twoTabWindow(extra: Parameters<typeof createFakeBrowser>[0] = {}) {
   return createFakeBrowser({
     tabs: [
       { id: 10, windowId: 1, active: true },

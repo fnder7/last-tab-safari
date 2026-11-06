@@ -11,9 +11,20 @@ press it again to go back, like a quick Cmd-Tab for apps.
 - Each window has its own pair of tabs.
 - No access to websites. The only permission is `storage`.
 
+## Project layout
+
+- `src/`: TypeScript sources (`background/`, `shared/`). They are bundled by esbuild
+  (`scripts/build.mjs`) into `dist/`.
+- `static/`: `manifest.json` and icons, copied into `dist/` as they are.
+- `dist/`: the build output that Xcode packages. It is git-ignored.
+- `Last Tab/`: the Xcode container app. The "Build Web Extension" phase of the extension target runs
+  `scripts/xcode-build-extension.sh` (`npm ci` if needed, then `npm run build`), so building in
+  Xcode always packages fresh code.
+
 ## Build
 
 ```bash
+npm install
 xcodebuild -project "Last Tab/Last Tab.xcodeproj" -scheme "Last Tab" -configuration Debug -derivedDataPath build build
 open "build/Build/Products/Debug/Last Tab.app"
 ```
@@ -23,19 +34,13 @@ The Debug build is signed ad hoc. In Safari → Settings → Developer, turn on
 enable Last Tab in Settings → Extensions. To avoid the reset, choose your
 Personal Team under Xcode → target → Signing & Capabilities.
 
-The extension's sources live in `extension/`. The Xcode project references
-these files one by one, so a new file in `extension/` must also be added to
-the "Last Tab Extension" target's resources.
-
 ## Test
 
 ```bash
 npm test
 ```
 
-This runs `node --test tests/` with no dependencies. It covers the pure state
-logic (`extension/mru.js`) and the event wiring (`extension/controller.js`)
-against a fake `browser` object.
+This runs a strict type check (`tsc --noEmit`) and then the `node:test` suites in `tests/` through `tsx`.
 
 ## Manual checklist
 
