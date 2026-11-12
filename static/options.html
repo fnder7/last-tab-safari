@@ -5,8 +5,10 @@
   <meta name="color-scheme" content="light dark">
   <title>Last Tab Settings</title>
   <style>
-    body { font: 13px -apple-system, system-ui, sans-serif; margin: 24px; max-width: 460px; }
-    h1 { font-size: 17px; margin: 0 0 16px; }
+    html { min-width: 330px; }
+    body { font: 13px -apple-system, system-ui, sans-serif; margin: 18px 20px; max-width: 460px; }
+    h1 { font-size: 15px; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+    h1 img { width: 24px; height: 24px; }
     .row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
     label { width: 70px; color: GrayText; }
     select, button { font: inherit; padding: 4px 10px; min-width: 140px; }
@@ -17,7 +19,7 @@
   </style>
 </head>
 <body>
-  <h1>Last Tab shortcut</h1>
+  <h1><img src="images/icon-48.png" alt="">Last Tab shortcut</h1>
   <div class="row">
     <label for="modifier">Modifier</label>
     <select id="modifier"></select>

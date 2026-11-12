@@ -1,6 +1,8 @@
-// Options page: pick the menu shortcut (modifier + key). Saved to storage.local.
+// Settings UI, shared by the toolbar popup and Safari's extension settings:
+// pick the menu shortcut (modifier + key). Saved to storage.local.
 import { SHORTCUT } from '../shared/storage-keys.ts';
-import { DEFAULT_SHORTCUT, MODIFIERS, isAllowedCode, isShortcut, label, type ModifierName, type Shortcut } from '../content/shortcut.ts';
+import { DEFAULT_SHORTCUT, MODIFIERS, isShortcut, label, type ModifierName, type Shortcut } from '../content/shortcut.ts';
+import { classifyKey } from './key-recorder.ts';
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -35,7 +37,17 @@ function show(): void {
 async function save(next: Shortcut): Promise<void> {
   shortcut = next;
   show();
-  await browser.storage.local.set({ [SHORTCUT]: shortcut });
+  try {
+    await browser.storage.local.set({ [SHORTCUT]: shortcut });
+  } catch {
+    errorText.textContent = "Couldn't save the shortcut. Try again.";
+  }
+}
+
+function stopRecording(): void {
+  if (!recording) return;
+  recording = false;
+  show();
 }
 
 modifierSelect.addEventListener('change', () => {
@@ -54,22 +66,30 @@ window.addEventListener(
     if (!recording) return;
     event.preventDefault();
     event.stopPropagation();
-    if (event.key === 'Escape') {
-      recording = false;
-      show();
-      return;
+    const outcome = classifyKey(event);
+    switch (outcome.kind) {
+      case 'cancel':
+        stopRecording();
+        return;
+      case 'wait':
+        return;
+      case 'invalid':
+        errorText.textContent = "This key can't be used. Pick a letter, digit or punctuation key.";
+        return;
+      case 'accept':
+        recording = false;
+        errorText.textContent = '';
+        void save({ ...shortcut, code: outcome.code });
     }
-    if (['Alt', 'Control', 'Meta', 'Shift'].includes(event.key)) return; // wait for the actual key
-    if (!isAllowedCode(event.code)) {
-      errorText.textContent = "This key can't be used. Pick a letter, digit or punctuation key.";
-      return;
-    }
-    recording = false;
-    errorText.textContent = '';
-    void save({ ...shortcut, code: event.code });
   },
   true,
 );
+
+// Clicking anywhere else, or leaving the page, cancels recording.
+document.addEventListener('mousedown', (event) => {
+  if (event.target !== keyButton) stopRecording();
+});
+window.addEventListener('blur', stopRecording);
 
 browser.storage.local.get(SHORTCUT).then((data) => {
   if (isShortcut(data[SHORTCUT])) shortcut = data[SHORTCUT];

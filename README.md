@@ -38,6 +38,11 @@ A stable signature lets Safari remember the extension and its website access bet
 "Allow unsigned extensions" is not needed. To build with a different Apple ID, pick your own team under
 Xcode → target → Signing & Capabilities for both targets.
 
+## Icons
+
+All icons (app icon set, extension icons, toolbar glyph) are drawn in code:
+`swift scripts/icons.swift` from the repo root rewrites the PNGs. Commit the results.
+
 ## Test
 
 ```bash
