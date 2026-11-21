@@ -1,44 +1,48 @@
-// Settings UI, shared by the toolbar popup and Safari's extension settings:
-// pick the menu shortcut (modifier + key). Saved to storage.local.
+// Settings UI, shared by the toolbar popup and Safari's extension settings: two shortcut rows,
+// Forward and Back. Back follows Forward + ⇧ until the user records one of their own.
+import { effectiveReverse, label, parseStored, safariConflict, type Combo, type Shortcuts } from '../shared/combo.ts';
+import type { StatusResponse } from '../shared/native.ts';
 import { SHORTCUT } from '../shared/storage-keys.ts';
-import { DEFAULT_SHORTCUT, MODIFIERS, isShortcut, label, type ModifierName, type Shortcut } from '../content/shortcut.ts';
-import { classifyKey } from './key-recorder.ts';
+import { classifyCombo } from './key-recorder.ts';
+
+type Field = 'forward' | 'reverse';
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-
-const modifierSelect = byId<HTMLSelectElement>('modifier');
-const keyButton = byId<HTMLButtonElement>('key');
+const buttons: Record<Field, HTMLButtonElement> = { forward: byId('forward'), reverse: byId('reverse') };
+const warnings: Record<Field, HTMLElement> = { forward: byId('forward-warning'), reverse: byId('reverse-warning') };
+const resetReverse = byId<HTMLButtonElement>('reset-reverse');
 const errorText = byId<HTMLElement>('error');
-const forwardText = byId<HTMLElement>('forward');
-const reverseText = byId<HTMLElement>('reverse');
+const statusBox = byId<HTMLElement>('status');
 
-let shortcut: Shortcut = DEFAULT_SHORTCUT;
-let recording = false;
+let shortcuts: Shortcuts = parseStored(undefined);
+let recording: Field | null = null;
 
-for (const [name, info] of Object.entries(MODIFIERS)) {
-  const option = document.createElement('option');
-  option.value = name;
-  option.textContent = `${info.symbol} ${info.name}`;
-  modifierSelect.append(option);
-}
+const sameCombo = (a: Combo | null, b: Combo | null) => !!a && !!b && label(a) === label(b);
 
-function keyName(s: Shortcut): string {
-  return label(s).split(' + ').at(-1)!;
-}
+const warningFor = (combo: Combo | null) => {
+  const conflict = combo && safariConflict(combo);
+  return conflict ? `Overrides Safari's “${conflict}” while Safari is active.` : '';
+};
 
 function show(): void {
-  modifierSelect.value = shortcut.modifier;
-  keyButton.textContent = recording ? 'Press a key…' : keyName(shortcut);
-  keyButton.classList.toggle('recording', recording);
-  forwardText.textContent = label(shortcut);
-  reverseText.textContent = label(shortcut, { shift: true });
+  const reverse = effectiveReverse(shortcuts);
+  const shown: Record<Field, Combo | null> = { forward: shortcuts.forward, reverse };
+  for (const field of ['forward', 'reverse'] as const) {
+    const button = buttons[field];
+    button.classList.toggle('recording', recording === field);
+    button.textContent = recording === field ? 'Press a shortcut…' : shown[field] ? label(shown[field]!) : 'Click to set';
+    warnings[field].textContent = recording === field ? '' : warningFor(shown[field]);
+  }
+  buttons.reverse.classList.toggle('auto', shortcuts.reverse === null && recording !== 'reverse');
+  buttons.reverse.title = shortcuts.reverse === null ? 'Follows Forward + ⇧' : '';
+  resetReverse.hidden = shortcuts.reverse === null;
 }
 
-async function save(next: Shortcut): Promise<void> {
-  shortcut = next;
+async function save(next: Shortcuts): Promise<void> {
+  shortcuts = next;
   show();
   try {
-    await browser.storage.local.set({ [SHORTCUT]: shortcut });
+    await browser.storage.local.set({ [SHORTCUT]: shortcuts });
   } catch {
     errorText.textContent = "Couldn't save the shortcut. Try again.";
   }
@@ -46,18 +50,21 @@ async function save(next: Shortcut): Promise<void> {
 
 function stopRecording(): void {
   if (!recording) return;
-  recording = false;
+  recording = null;
   show();
 }
 
-modifierSelect.addEventListener('change', () => {
-  void save({ ...shortcut, modifier: modifierSelect.value as ModifierName });
-});
+for (const field of ['forward', 'reverse'] as const) {
+  buttons[field].addEventListener('click', () => {
+    recording = field;
+    errorText.textContent = '';
+    show();
+  });
+}
 
-keyButton.addEventListener('click', () => {
-  recording = true;
+resetReverse.addEventListener('click', () => {
   errorText.textContent = '';
-  show();
+  void save({ ...shortcuts, reverse: null });
 });
 
 window.addEventListener(
@@ -66,7 +73,7 @@ window.addEventListener(
     if (!recording) return;
     event.preventDefault();
     event.stopPropagation();
-    const outcome = classifyKey(event);
+    const outcome = classifyCombo(event);
     switch (outcome.kind) {
       case 'cancel':
         stopRecording();
@@ -74,12 +81,23 @@ window.addEventListener(
       case 'wait':
         return;
       case 'invalid':
-        errorText.textContent = "This key can't be used. Pick a letter, digit or punctuation key.";
+        errorText.textContent =
+          outcome.reason === 'modifier'
+            ? 'Add ⌘ Command, ⌥ Option or ⌃ Control to the shortcut.'
+            : "This key can't be used. Pick a letter, digit, punctuation, Space, Tab or F1–F12.";
         return;
-      case 'accept':
-        recording = false;
+      case 'accept': {
+        const field = recording;
+        const next: Shortcuts =
+          field === 'forward' ? { ...shortcuts, forward: outcome.combo } : { ...shortcuts, reverse: outcome.combo };
+        if (sameCombo(next.forward, effectiveReverse(next))) {
+          errorText.textContent = "Back can't be the same as forward.";
+          return;
+        }
+        recording = null;
         errorText.textContent = '';
-        void save({ ...shortcut, code: outcome.code });
+        void save(next);
+      }
     }
   },
   true,
@@ -87,12 +105,18 @@ window.addEventListener(
 
 // Clicking anywhere else, or leaving the page, cancels recording.
 document.addEventListener('mousedown', (event) => {
-  if (event.target !== keyButton) stopRecording();
+  if (recording && event.target !== buttons[recording]) stopRecording();
 });
 window.addEventListener('blur', stopRecording);
 
 browser.storage.local.get(SHORTCUT).then((data) => {
-  if (isShortcut(data[SHORTCUT])) shortcut = data[SHORTCUT];
+  shortcuts = parseStored(data[SHORTCUT]);
   show();
 });
+browser.runtime
+  .sendMessage({ type: 'app:status' })
+  .then((reply) => {
+    statusBox.hidden = (reply as StatusResponse | undefined)?.appRunning !== false;
+  })
+  .catch(() => {});
 show();

@@ -17,12 +17,14 @@ html {
 body {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     flex-direction: column;
 
     gap: var(--spacing);
     margin: 0 calc(var(--spacing) * 2);
-    height: 100%;
+    padding: var(--spacing) 0;
+    box-sizing: border-box;
+    min-height: 100%;
 
     font: -apple-system-short-body;
     text-align: center;
@@ -44,8 +46,13 @@ button {
     font-size: 1em;
 }
 
-.usage p {
-    margin: 0.4em 0;
+p {
+    margin: 0;
+}
+
+.hint {
+    font-size: 0.85em;
+    opacity: 0.6;
 }
 
 kbd {

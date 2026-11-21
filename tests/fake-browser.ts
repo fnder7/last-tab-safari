@@ -8,17 +8,28 @@ export type FakeTab = {
   index?: number;
   title?: string;
   favIconUrl?: string;
+  url?: string;
+  incognito?: boolean;
 };
 
 export type FakeBrowserInit = {
   tabs?: FakeTab[];
   focusedWindowId?: number;
   sessionData?: Record<string, unknown>;
+  localData?: Record<string, unknown>;
+  /** Reply of the native handler; a function lets a test fail or vary it. */
+  nativeReply?: (msg: any) => unknown;
 };
 
 type Listener = (...args: any[]) => unknown;
 
-export function createFakeBrowser({ tabs = [], focusedWindowId = 1, sessionData = {} }: FakeBrowserInit = {}) {
+export function createFakeBrowser({
+  tabs = [],
+  focusedWindowId = 1,
+  sessionData = {},
+  localData = {},
+  nativeReply = () => ({ ok: true, appRunning: true }),
+}: FakeBrowserInit = {}) {
   const listeners = new Map<string, Listener[]>();
   const event = (path: string) => ({
     addListener(fn: Listener) {
@@ -27,7 +38,10 @@ export function createFakeBrowser({ tabs = [], focusedWindowId = 1, sessionData 
     },
   });
   const session: Record<string, any> = structuredClone(sessionData);
+  const local: Record<string, any> = structuredClone(localData);
   const updateCalls: Array<[number, { active: boolean }]> = [];
+  const nativeSent: any[] = [];
+  let connects = 0;
 
   const fake = {
     tabs: {
@@ -35,7 +49,7 @@ export function createFakeBrowser({ tabs = [], focusedWindowId = 1, sessionData 
       onRemoved: event('tabs.onRemoved'),
       onDetached: event('tabs.onDetached'),
       onUpdated: event('tabs.onUpdated'),
-      async query(filter: Partial<Pick<FakeTab, 'active' | 'windowId'>>) {
+      async query(filter: Partial<Pick<FakeTab, 'active' | 'windowId'>> = {}) {
         return tabs
           .filter((t) => Object.entries(filter).every(([k, v]) => t[k as keyof FakeTab] === v))
           .map((t) => ({ ...t }));
@@ -52,12 +66,32 @@ export function createFakeBrowser({ tabs = [], focusedWindowId = 1, sessionData 
     },
     windows: {
       onRemoved: event('windows.onRemoved'),
+      onFocusChanged: event('windows.onFocusChanged'),
       async getLastFocused() {
         return { id: focusedWindowId };
       },
     },
-    runtime: { onMessage: event('runtime.onMessage') },
+    runtime: {
+      onMessage: event('runtime.onMessage'),
+      async sendNativeMessage(_app: string, msg: unknown) {
+        nativeSent.push(structuredClone(msg));
+        return nativeReply(msg);
+      },
+      connectNative(_app: string) {
+        connects += 1;
+        return { onMessage: event('port.onMessage'), onDisconnect: event('port.onDisconnect') };
+      },
+    },
     storage: {
+      onChanged: event('storage.onChanged'),
+      local: {
+        async get(key: string) {
+          return key in local ? { [key]: structuredClone(local[key]) } : {};
+        },
+        async set(obj: Record<string, unknown>) {
+          Object.assign(local, structuredClone(obj));
+        },
+      },
       session: {
         async get(key: string) {
           return key in session ? { [key]: structuredClone(session[key]) } : {};
@@ -79,7 +113,17 @@ export function createFakeBrowser({ tabs = [], focusedWindowId = 1, sessionData 
     return undefined;
   };
 
-  return { browser: fake as unknown as Browser, fire, send, tabs, updateCalls, session, listeners };
+  return {
+    browser: fake as unknown as Browser,
+    fire,
+    send,
+    tabs,
+    updateCalls,
+    session,
+    listeners,
+    nativeSent,
+    connects: () => connects,
+  };
 }
 
 export type FakeBrowser = ReturnType<typeof createFakeBrowser>;

@@ -1,17 +1,17 @@
-// Decides what a keypress means while the settings page is recording a shortcut key.
-import { isAllowedCode } from '../content/shortcut.ts';
+// Decides what a keypress means while the settings page is recording a shortcut.
+import { comboFromEvent, isValidCombo, type Combo, type KeyLike } from '../shared/combo.ts';
 
-export type KeyOutcome =
+export type ComboOutcome =
   | { kind: 'cancel' }
   | { kind: 'wait' }
-  | { kind: 'invalid' }
-  | { kind: 'accept'; code: string };
+  | { kind: 'invalid'; reason: 'modifier' | 'key' }
+  | { kind: 'accept'; combo: Combo };
 
-const MODIFIER_KEYS = new Set(['Alt', 'Control', 'Meta', 'Shift']);
-
-export function classifyKey(e: Pick<KeyboardEvent, 'key' | 'code'>): KeyOutcome {
+export function classifyCombo(e: KeyLike): ComboOutcome {
   if (e.key === 'Escape') return { kind: 'cancel' };
-  if (MODIFIER_KEYS.has(e.key)) return { kind: 'wait' };
-  if (!isAllowedCode(e.code)) return { kind: 'invalid' };
-  return { kind: 'accept', code: e.code };
+  const combo = comboFromEvent(e);
+  if (!combo) return { kind: 'wait' };
+  if (!combo.meta && !combo.alt && !combo.ctrl) return { kind: 'invalid', reason: 'modifier' };
+  if (!isValidCombo(combo)) return { kind: 'invalid', reason: 'key' };
+  return { kind: 'accept', combo };
 }

@@ -1,10 +1,13 @@
 {
   "name": "last-tab",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "tsc --noEmit && node --import tsx --test tests/*.test.ts"
+    "test": "tsc --noEmit && node --import tsx --test tests/*.test.ts",
+    "set-version": "node --import tsx scripts/set-version.ts",
+    "test:native": "swift test --package-path 'Last Tab/Core'"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

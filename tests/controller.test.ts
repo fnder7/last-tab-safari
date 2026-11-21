@@ -1,13 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createController } from '../src/background/controller.ts';
-import type { ListResponse } from '../src/shared/messages.ts';
+import { createController, type SnapshotSink } from '../src/background/controller.ts';
+import type { SnapshotMessage } from '../src/shared/native.ts';
 import { createFakeBrowser, type FakeBrowser, type FakeTab } from './fake-browser.ts';
 
 const activate = (f: FakeBrowser, windowId: number, tabId: number) => f.fire('tabs.onActivated', { tabId, windowId });
-const sender = (id: number, windowId = 1) => ({ tab: { id, windowId } });
-const list = async (f: FakeBrowser, from = sender(10)) =>
-  (await f.send({ type: 'menu:list' }, from)) as ListResponse;
 
 const tab = (id: number, index: number, active = false): FakeTab => ({
   id,
@@ -22,6 +19,29 @@ function twoTabWindow(extra: Parameters<typeof createFakeBrowser>[0] = {}) {
   return createFakeBrowser({ tabs: [tab(10, 0, true), tab(20, 1)], focusedWindowId: 1, ...extra });
 }
 
+/** Records what the controller hands to the native bridge. */
+function sink() {
+  const snapshots: SnapshotMessage[] = [];
+  const previews: Array<[number, string]> = [];
+  const activateHandlers: Array<(tabId: number) => void> = [];
+  const acks: number[] = [];
+  const bridge: SnapshotSink = {
+    publishSnapshot: (s) => void snapshots.push(s),
+    publishPreview: (tabId, dataUrl) => void previews.push([tabId, dataUrl]),
+    onActivate: (fn) => void activateHandlers.push(fn),
+    ackActivated: (tabId) => void acks.push(tabId),
+  };
+  return {
+    bridge,
+    snapshots,
+    previews,
+    acks,
+    last: () => snapshots.at(-1)!,
+    ids: (windowId = 1) => snapshots.at(-1)!.windows[String(windowId)]?.tabs.map((t) => t.id),
+    activateFromApp: (tabId: number) => activateHandlers.forEach((fn) => fn(tabId)),
+  };
+}
+
 test('registers listeners synchronously', () => {
   const f = twoTabWindow();
   createController(f.browser);
@@ -31,7 +51,7 @@ test('registers listeners synchronously', () => {
     'tabs.onDetached',
     'tabs.onUpdated',
     'windows.onRemoved',
-    'runtime.onMessage',
+    'windows.onFocusChanged',
   ]) {
     assert.ok(f.listeners.get(path)?.length, path);
   }
@@ -93,48 +113,88 @@ test('windows.onRemoved drops entry', async () => {
   assert.ok(!('1' in f.session.mruState));
 });
 
-test('menu:list returns MRU order', async () => {
+test('snapshot lists tabs in MRU order per window', async () => {
   const f = createFakeBrowser({ tabs: [tab(10, 0, true), tab(20, 1), tab(30, 2)] });
-  const c = createController(f.browser);
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge });
   activate(f, 1, 20);
   activate(f, 1, 30);
   await c.idle();
-  const { tabs } = await list(f, sender(30));
-  assert.deepEqual(tabs.map((t) => t.id), [30, 20, 10]);
-  assert.deepEqual(tabs[0], { id: 30, title: 'Tab 30', favIconUrl: 'https://icon/30', preview: null });
+  assert.deepEqual(out.ids(), [30, 20, 10]);
+  assert.deepEqual(out.last().windows['1'].tabs[0], { id: 30, title: 'Tab 30', favIconUrl: 'https://icon/30', hasPreview: false });
+  assert.equal(out.last().type, 'snapshot');
 });
 
-test('menu:list appends unseen open tabs and drops closed ones', async () => {
+test('snapshot appends unseen open tabs and drops closed ones', async () => {
   const f = twoTabWindow({ sessionData: { mruState: { 1: { order: [99, 10] } } } });
-  createController(f.browser);
-  const { tabs } = await list(f);
-  assert.deepEqual(tabs.map((t) => t.id), [10, 20]);
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge });
+  await c.idle();
+  assert.deepEqual(out.ids(), [10, 20]);
 });
 
-test('menu:activate switches tab', async () => {
+test('snapshot skips incognito tabs', async () => {
+  const f = createFakeBrowser({
+    tabs: [tab(10, 0, true), { id: 50, windowId: 5, active: true, index: 0, incognito: true }],
+  });
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge });
+  await c.idle();
+  assert.deepEqual(Object.keys(out.last().windows), ['1']);
+});
+
+test('snapshot tracks focused window', async () => {
+  const f = createFakeBrowser({ tabs: [tab(10, 0, true), { id: 30, windowId: 2, active: true, index: 0 }], focusedWindowId: 2 });
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge });
+  await c.idle();
+  assert.equal(out.last().focusedWindowId, 2);
+  f.fire('windows.onFocusChanged', 1);
+  await c.idle();
+  assert.equal(out.last().focusedWindowId, 1);
+  f.fire('windows.onFocusChanged', -1); // WINDOW_ID_NONE: Safari lost focus, keep the last window
+  await c.idle();
+  assert.equal(out.last().focusedWindowId, 1);
+});
+
+test('title changes republish the snapshot', async () => {
   const f = twoTabWindow();
-  createController(f.browser);
-  await f.send({ type: 'menu:activate', tabId: 20 }, sender(10));
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge, schedule: () => {} });
+  await c.idle();
+  f.tabs[1].title = 'Renamed';
+  f.fire('tabs.onUpdated', 20, { title: 'Renamed' }, { ...f.tabs[1] });
+  await c.idle();
+  assert.equal(out.last().windows['1'].tabs.find((t) => t.id === 20)?.title, 'Renamed');
+});
+
+test('activate from app switches tab and acknowledges', async () => {
+  const f = twoTabWindow();
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge });
+  out.activateFromApp(20);
+  await c.idle();
+  await new Promise((r) => setTimeout(r, 0));
   assert.deepEqual(f.updateCalls, [[20, { active: true }]]);
+  assert.deepEqual(out.acks, [20]);
 });
 
-test('activate ignores a closed tab', async () => {
+test('activate ignores closed tab', async () => {
   const f = twoTabWindow();
-  createController(f.browser);
-  await assert.doesNotReject(f.send({ type: 'menu:activate', tabId: 99 }, sender(10)));
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge });
+  out.activateFromApp(99);
+  await c.idle();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(f.updateCalls, [[99, { active: true }]]);
 });
 
 test('legacy stored state is normalized', async () => {
   const f = twoTabWindow({ sessionData: { mruState: { 1: { current: 20, previous: 10 } } } });
-  createController(f.browser);
-  const { tabs } = await list(f);
-  assert.deepEqual(tabs.map((t) => t.id), [20, 10]);
-});
-
-test('unknown messages get no reply', async () => {
-  const f = twoTabWindow();
-  createController(f.browser);
-  assert.equal(await f.send({ type: 'nope' }, sender(10)), undefined);
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge });
+  await c.idle();
+  assert.deepEqual(out.ids(), [20, 10]);
 });
 
 // --- previews -------------------------------------------------------------
@@ -164,12 +224,13 @@ test('captures after activation when tab still active', async () => {
     if (calls > 1) throw new Error('later capture fails');
     return `data:w${w}`;
   };
-  const c = createController(f.browser, { capture, schedule: timers.schedule });
+  const out = sink();
+  const c = createController(f.browser, { capture, schedule: timers.schedule, bridge: out.bridge });
   setActive(f, 20);
   activate(f, 1, 20);
   await timers.runAll(c);
-  const { tabs } = await list(f, sender(20));
-  assert.equal(tabs.find((t) => t.id === 20)?.preview, 'data:w1');
+  assert.deepEqual(out.previews, [[20, 'data:w1']]);
+  assert.equal(out.last().windows['1'].tabs.find((t) => t.id === 20)?.hasPreview, true);
 });
 
 test('skips capture if tab no longer active', async () => {
@@ -180,38 +241,40 @@ test('skips capture if tab no longer active', async () => {
     captured.push(w);
     throw new Error('no capture');
   };
-  const c = createController(f.browser, { capture, schedule: timers.schedule });
+  const out = sink();
+  const c = createController(f.browser, { capture, schedule: timers.schedule, bridge: out.bridge });
   activate(f, 1, 20); // fake keeps 10 active
   await timers.runAll(c);
   assert.deepEqual(captured, []);
-  const { tabs } = await list(f, sender(20));
-  assert.equal(tabs.find((t) => t.id === 20)?.preview, null);
+  assert.deepEqual(out.previews, []);
 });
 
 test('captures after a page finishes loading in the active tab', async () => {
   const f = twoTabWindow();
   const timers = withTimers();
-  const c = createController(f.browser, { capture: async () => 'data:loaded', schedule: timers.schedule });
+  const out = sink();
+  const c = createController(f.browser, { capture: async () => 'data:loaded', schedule: timers.schedule, bridge: out.bridge });
   f.fire('tabs.onUpdated', 10, { status: 'complete' }, { id: 10, windowId: 1, active: true });
   f.fire('tabs.onUpdated', 20, { status: 'complete' }, { id: 20, windowId: 1, active: false });
   await timers.runAll(c);
-  const { tabs } = await list(f, sender(20));
-  assert.equal(tabs.find((t) => t.id === 10)?.preview, 'data:loaded');
+  assert.deepEqual(out.previews, [[10, 'data:loaded']]);
 });
 
 test('capture failure leaves no preview', async () => {
   const f = twoTabWindow();
   const timers = withTimers();
+  const out = sink();
   const c = createController(f.browser, {
     capture: async () => {
       throw new Error('restricted page');
     },
     schedule: timers.schedule,
+    bridge: out.bridge,
   });
   activate(f, 1, 10);
   await timers.runAll(c);
-  const { tabs } = await list(f);
-  assert.ok(tabs.every((t) => t.preview === null));
+  assert.deepEqual(out.previews, []);
+  assert.ok(out.last().windows['1'].tabs.every((t) => !t.hasPreview));
 });
 
 test('closing a tab drops its preview', async () => {
@@ -222,20 +285,36 @@ test('closing a tab drops its preview', async () => {
     if (fail) throw new Error('off');
     return 'data:x';
   };
-  const c = createController(f.browser, { capture, schedule: timers.schedule });
+  const out = sink();
+  const c = createController(f.browser, { capture, schedule: timers.schedule, bridge: out.bridge });
   f.fire('tabs.onUpdated', 20, { status: 'complete' }, { id: 20, windowId: 1, active: true });
   await timers.runAll(c);
   fail = true;
   f.fire('tabs.onRemoved', 20, { windowId: 1, isWindowClosing: false });
   f.tabs.push({ ...tab(20, 1) }); // same id reappears in the query result
   await c.idle();
-  const { tabs } = await list(f);
-  assert.equal(tabs.find((t) => t.id === 20)?.preview, null);
+  assert.equal(out.last().windows['1'].tabs.find((t) => t.id === 20)?.hasPreview, false);
 });
 
-test('menu:list captures the sender tab', async () => {
-  const f = twoTabWindow();
-  createController(f.browser, { capture: async (w) => `data:w${w}`, schedule: () => {} });
-  const { tabs } = await list(f, sender(10));
-  assert.equal(tabs.find((t) => t.id === 10)?.preview, 'data:w1');
+test('private tabs are never captured', async () => {
+  const f = createFakeBrowser({
+    tabs: [{ id: 50, windowId: 5, active: true, index: 0, incognito: true }],
+    focusedWindowId: 5,
+  });
+  const timers = withTimers();
+  const captured: number[] = [];
+  const out = sink();
+  const c = createController(f.browser, {
+    capture: async (w) => {
+      captured.push(w);
+      return 'data:secret';
+    },
+    schedule: timers.schedule,
+    bridge: out.bridge,
+  });
+  activate(f, 5, 50);
+  f.fire('tabs.onUpdated', 50, { status: 'complete' }, { id: 50, windowId: 5, active: true, incognito: true });
+  await timers.runAll(c);
+  assert.deepEqual(captured, []);
+  assert.deepEqual(out.previews, []);
 });

@@ -1,42 +1,33 @@
-//
-//  SafariWebExtensionHandler.swift
-//  Last Tab Extension
-//
-//  Created by Aidar  Idrisov on 06.11.2026.
-//
-
+// Receives the background's browser.runtime.sendNativeMessage calls, stores them in the
+// App Group for the Last Tab app and pings the app with a Darwin notification.
+import AppKit
 import SafariServices
-import os.log
+import os
 
-class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
+private let logger = Logger(subsystem: "dev.fnder77.LastTab", category: "appex")
 
+final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     func beginRequest(with context: NSExtensionContext) {
         let request = context.inputItems.first as? NSExtensionItem
+        let message = request?.userInfo?[SFExtensionMessageKey]
 
-        let profile: UUID?
-        if #available(iOS 17.0, macOS 14.0, *) {
-            profile = request?.userInfo?[SFExtensionProfileKey] as? UUID
-        } else {
-            profile = request?.userInfo?["profile"] as? UUID
+        var ok = false
+        do {
+            guard let directory = Store.appGroupDirectory() else { throw NativeMessage.DecodeError() }
+            let decoded = try NativeMessage.decode(message)
+            if let notification = try Store(directory: directory).apply(decoded) {
+                CFNotificationCenterPostNotification(
+                    CFNotificationCenterGetDarwinNotifyCenter(),
+                    CFNotificationName(notification.rawValue as CFString), nil, nil, true)
+            }
+            ok = true
+        } catch {
+            logger.error("Unhandled message: \(String(describing: error), privacy: .public)")
         }
 
-        let message: Any?
-        if #available(iOS 15.0, macOS 11.0, *) {
-            message = request?.userInfo?[SFExtensionMessageKey]
-        } else {
-            message = request?.userInfo?["message"]
-        }
-
-        os_log(.default, "Received message from browser.runtime.sendNativeMessage: %@ (profile: %@)", String(describing: message), profile?.uuidString ?? "none")
-
+        let appRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: "dev.fnder77.LastTab").isEmpty
         let response = NSExtensionItem()
-        if #available(iOS 15.0, macOS 11.0, *) {
-            response.userInfo = [ SFExtensionMessageKey: [ "echo": message ] ]
-        } else {
-            response.userInfo = [ "message": [ "echo": message ] ]
-        }
-
-        context.completeRequest(returningItems: [ response ], completionHandler: nil)
+        response.userInfo = [SFExtensionMessageKey: ["ok": ok, "appRunning": appRunning]]
+        context.completeRequest(returningItems: [response], completionHandler: nil)
     }
-
 }

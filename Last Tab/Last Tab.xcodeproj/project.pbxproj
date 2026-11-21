@@ -20,7 +20,6 @@
 		84C21095309E5F7B00B07178 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C21092309E5F7B00B07178 /* background.js */; };
 		84C21096309E5F7B00B07178 /* images in Resources */ = {isa = PBXBuildFile; fileRef = 84C21093309E5F7B00B07178 /* images */; };
 		84C21097309E5F7B00B07178 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 84C21094309E5F7B00B07178 /* manifest.json */; };
-		84C210D2309E5F7B00B07178 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C210D1309E5F7B00B07178 /* content.js */; };
 		84C210E2309E5F7B00B07178 /* options.js in Resources */ = {isa = PBXBuildFile; fileRef = 84C210E1309E5F7B00B07178 /* options.js */; };
 		84C210E4309E5F7B00B07178 /* options.html in Resources */ = {isa = PBXBuildFile; fileRef = 84C210E3309E5F7B00B07178 /* options.html */; };
 /* End PBXBuildFile section */
@@ -66,10 +65,14 @@
 		84C21092309E5F7B00B07178 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../../dist/background.js; sourceTree = "<group>"; };
 		84C21093309E5F7B00B07178 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../../dist/images; sourceTree = "<group>"; };
 		84C21094309E5F7B00B07178 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../dist/manifest.json; sourceTree = "<group>"; };
-		84C210D1309E5F7B00B07178 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = ../../dist/content.js; sourceTree = "<group>"; };
 		84C210E1309E5F7B00B07178 /* options.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = options.js; path = ../../dist/options.js; sourceTree = "<group>"; };
 		84C210E3309E5F7B00B07178 /* options.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = options.html; path = ../../dist/options.html; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		84C2A0012F00000000B07178 /* LastTabCore */ = {isa = PBXFileSystemSynchronizedRootGroup; name = LastTabCore; path = Core/Sources/LastTabCore; sourceTree = "<group>"; };
+		84C2A0022F00000000B07178 /* App */ = {isa = PBXFileSystemSynchronizedRootGroup; path = App; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		84C21062309E5F7900B07178 /* Frameworks */ = {
@@ -93,6 +96,8 @@
 			isa = PBXGroup;
 			children = (
 				84C21067309E5F7900B07178 /* Last Tab */,
+				84C2A0022F00000000B07178 /* App */,
+				84C2A0012F00000000B07178 /* LastTabCore */,
 				84C21084309E5F7A00B07178 /* Last Tab Extension */,
 				84C21066309E5F7900B07178 /* Products */,
 			);
@@ -147,7 +152,6 @@
 				84C21092309E5F7B00B07178 /* background.js */,
 				84C210E1309E5F7B00B07178 /* options.js */,
 				84C210E3309E5F7B00B07178 /* options.html */,
-				84C210D1309E5F7B00B07178 /* content.js */,
 				84C21093309E5F7B00B07178 /* images */,
 				84C21094309E5F7B00B07178 /* manifest.json */,
 			);
@@ -172,6 +176,10 @@
 			dependencies = (
 				84C21083309E5F7A00B07178 /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				84C2A0022F00000000B07178 /* App */,
+				84C2A0012F00000000B07178 /* LastTabCore */,
+			);
 			name = "Last Tab";
 			packageProductDependencies = (
 			);
@@ -191,6 +199,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				84C2A0012F00000000B07178 /* LastTabCore */,
 			);
 			name = "Last Tab Extension";
 			packageProductDependencies = (
@@ -260,7 +271,6 @@
 				84C21095309E5F7B00B07178 /* background.js in Resources */,
 				84C210E2309E5F7B00B07178 /* options.js in Resources */,
 				84C210E4309E5F7B00B07178 /* options.html in Resources */,
-				84C210D2309E5F7B00B07178 /* content.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -458,12 +468,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = "Last Tab Extension/Last Tab Extension.entitlements";
 				INFOPLIST_FILE = "Last Tab Extension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Last Tab Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -472,8 +483,8 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 1.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -494,12 +505,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = "Last Tab Extension/Last Tab Extension.entitlements";
 				INFOPLIST_FILE = "Last Tab Extension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Last Tab Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -508,8 +520,8 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 1.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -533,14 +545,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 2K54TT5K2K;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = "Last Tab/Last Tab.entitlements";
 				INFOPLIST_FILE = "Last Tab/Info.plist";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Last Tab";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
@@ -549,7 +563,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -575,14 +589,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 2K54TT5K2K;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = "Last Tab/Last Tab.entitlements";
 				INFOPLIST_FILE = "Last Tab/Info.plist";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Last Tab";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
@@ -591,7 +607,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,

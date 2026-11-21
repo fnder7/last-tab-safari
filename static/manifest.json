@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Last Tab",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Cmd-Tab style switcher for the tabs of the current Safari window.",
   "permissions": [
     "tabs",
-    "storage"
+    "storage",
+    "nativeMessaging"
   ],
   "icons": {
     "48": "images/icon-48.png",
@@ -27,22 +28,11 @@
   "background": {
     "scripts": [
       "background.js"
-    ]
+    ],
+    "persistent": true
   },
   "host_permissions": [
     "<all_urls>"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": false
-    }
   ],
   "options_ui": {
     "page": "options.html"
