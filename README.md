@@ -45,6 +45,23 @@ It works everywhere in Safari: on websites, the Start Page, Safari's own pages a
 - **Private by design.** Previews stay on this Mac in the app's cache and are erased when their tabs
   close or Safari quits. Nothing is sent anywhere.
 
+## Install
+
+1. Download `LastTab-<version>.zip` from [Releases](../../releases/latest), unzip it and move
+   **Last Tab.app** to `/Applications`.
+2. The app is signed with a development certificate and not notarized, so macOS blocks the first
+   launch. Remove the quarantine flag once (or open it, then System Settings → Privacy & Security →
+   **Open Anyway**):
+
+   ```bash
+   xattr -dr com.apple.quarantine "/Applications/Last Tab.app"
+   ```
+
+3. Open **Last Tab**, then follow [Setup](#setup).
+
+If Safari doesn't list the extension, turn on Safari → Settings → Advanced → *Show features for web
+developers*, then Develop → **Allow Unsigned Extensions**.
+
 ## Setup
 
 Last Tab is two parts that work together:
