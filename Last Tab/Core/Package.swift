@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "LastTabCore",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v14)],
     products: [.library(name: "LastTabCore", targets: ["LastTabCore"])],
     targets: [
         .target(name: "LastTabCore"),

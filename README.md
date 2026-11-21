@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="macOS 26.5+" src="https://img.shields.io/badge/macOS-26.5%2B-000?logo=apple">
+  <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-000?logo=apple">
   <img alt="Safari" src="https://img.shields.io/badge/Safari-Web%20Extension-1E90FF?logo=safari&logoColor=white">
   <img alt="Version" src="https://img.shields.io/badge/version-2.0.0-blue">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green">
@@ -87,7 +87,7 @@ Extensions → Last Tab → Settings), click **Forward** and press the new combi
 
 ## Build from source
 
-Requirements: macOS 26.5+, Xcode, Node.js with npm.
+Requirements: Xcode and Node.js with npm. The app runs on macOS 14 Sonoma or later.
 
 ```bash
 npm install
