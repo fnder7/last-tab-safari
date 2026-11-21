@@ -47,29 +47,49 @@ It works everywhere in Safari: on websites, the Start Page, Safari's own pages a
 
 ## Install
 
-1. Download `LastTab-<version>.zip` from [Releases](../../releases/latest), unzip it and move
-   **Last Tab.app** to `/Applications`.
-2. The app is signed with a development certificate and not notarized, so macOS blocks the first
-   launch. Remove the quarantine flag once (or open it, then System Settings → Privacy & Security →
-   **Open Anyway**):
+Paste this into Terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bi472/last-tab-safari/main/scripts/install.sh | bash
+```
+
+It downloads the latest release into `/Applications`, clears the download quarantine and opens
+Last Tab. The same command updates an existing install.
+
+A setup window then walks you through the rest and ticks each step off as you do it:
+
+1. **Turn on the extension** in Safari → Settings → Extensions.
+2. **Allow it on every website** (Edit Websites… → For other websites: **Allow**) for page previews.
+3. **Open at login**, so the shortcut keeps working after a restart.
+
+Then hold **⌥ Option** in Safari and press **Q**. The setup window is always one click away:
+menu bar icon → **Setup Instructions…**
+
+<details>
+<summary>Install by hand</summary>
+
+1. Download `LastTab-<version>.zip` from [Releases](../../releases/latest) and double-click it.
+2. Drag **Last Tab.app** into **Applications**.
+3. The app isn't notarized, so macOS blocks the first launch. Run once:
 
    ```bash
    xattr -dr com.apple.quarantine "/Applications/Last Tab.app"
    ```
 
-3. Open **Last Tab**, then follow [Setup](#setup).
+   (Or open it, then System Settings → Privacy & Security → **Open Anyway**.)
+4. Open **Last Tab** and follow the setup window.
+
+</details>
 
 If Safari doesn't list the extension, turn on Safari → Settings → Advanced → *Show features for web
 developers*, then Develop → **Allow Unsigned Extensions**.
 
-## Setup
+## How the pieces fit
 
 Last Tab is two parts that work together:
 
 1. **The menu bar app** catches the shortcut while Safari is active and draws the strip.
-   Keep it running: menu bar icon → **Open at Login**.
-2. **The Safari extension** tracks tab order and previews. Turn it on in
-   Safari → Settings → Extensions → **Last Tab**, and allow it on all websites.
+2. **The Safari extension** tracks tab order and previews.
 
 To change the shortcut, click the Last Tab button on Safari's toolbar (or Safari → Settings →
 Extensions → Last Tab → Settings), click **Forward** and press the new combination.
@@ -147,7 +167,8 @@ npm run test:native
 1. `npm run set-version -- 1.2.0` writes the version to the manifest and the Xcode project and bumps
    the build number (a test fails if these drift apart).
 2. Add a section to `CHANGELOG.md`, commit, then `git tag v1.2.0`.
-3. Build Release and zip it as `release/LastTab-1.2.0.zip`.
+3. Build Release, zip it as `release/LastTab-1.2.0.zip` and attach it to a GitHub release:
+   `scripts/install.sh` installs the first `LastTab-*.zip` of the latest release.
 
 ### Icons
 
