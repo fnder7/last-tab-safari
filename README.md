@@ -148,4 +148,4 @@ All icons (app icon set, extension icons, toolbar glyph) are drawn in code:
 
 ## License
 
-[MIT](LICENSE) © 2026 Айдар Идрисов
+[MIT](LICENSE) © 2026 Aidar Idrisov
