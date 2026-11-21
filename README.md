@@ -12,7 +12,7 @@
 <p align="center">
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-000?logo=apple">
   <img alt="Safari" src="https://img.shields.io/badge/Safari-Web%20Extension-1E90FF?logo=safari&logoColor=white">
-  <img alt="Version" src="https://img.shields.io/badge/version-2.0.0-blue">
+  <img alt="Version" src="https://img.shields.io/badge/version-2.1.0-blue">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 

@@ -3,6 +3,13 @@
 Versions follow [semver](https://semver.org): patch for fixes, minor for new features,
 major for changes that break existing behaviour (for example, the default shortcut).
 
+## 2.1.0 — 2026-11-22
+
+- Setup window is now a checklist that ticks itself off: extension on, allowed on other websites,
+  open at login. It shows your current shortcut and opens from the menu bar or `lasttab://setup`.
+- One-command install and update: `scripts/install.sh` (see README).
+- Fixed: Xcode builds could package the previous build's extension scripts.
+
 ## 2.0.0 — 2026-11-22
 
 - The strip is now drawn by the Last Tab menu bar app, so the same shortcut works everywhere in Safari:

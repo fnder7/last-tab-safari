@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Last Tab",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Cmd-Tab style switcher for the tabs of the current Safari window.",
   "permissions": [
     "tabs",
