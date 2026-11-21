@@ -291,6 +291,10 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(SRCROOT)/../dist/background.js",
+				"$(SRCROOT)/../dist/options.js",
+				"$(SRCROOT)/../dist/options.html",
+				"$(SRCROOT)/../dist/manifest.json",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
