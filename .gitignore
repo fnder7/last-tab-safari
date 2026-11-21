@@ -6,3 +6,5 @@ xcuserdata/
 node_modules/
 dist/
 release/
+.build/
+.swiftpm/
