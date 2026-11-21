@@ -38,6 +38,8 @@ enum NativeMessage: Equatable, Sendable {
     case preview(tabId: Int, jpeg: Data)
     case shortcuts(Shortcuts)
     case activated(tabId: Int)
+    /// Whether Safari lets the extension run on every website.
+    case access(allSites: Bool)
     case ping
 
     struct DecodeError: Error {}
@@ -61,6 +63,9 @@ enum NativeMessage: Equatable, Sendable {
         case "activated":
             struct Activated: Decodable { var tabId: Int }
             return .activated(tabId: try decoder.decode(Activated.self, from: data).tabId)
+        case "access":
+            struct Access: Decodable { var allSites: Bool }
+            return .access(allSites: try decoder.decode(Access.self, from: data).allSites)
         case "ping":
             return .ping
         default:

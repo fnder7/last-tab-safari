@@ -20,6 +20,7 @@ final class Store: @unchecked Sendable {
     let directory: URL
     private var stateURL: URL { directory.appendingPathComponent("state.json") }
     private var shortcutsURL: URL { directory.appendingPathComponent("shortcuts.json") }
+    private var accessURL: URL { directory.appendingPathComponent("access.json") }
     private var previewsURL: URL { directory.appendingPathComponent("previews", isDirectory: true) }
 
     init(directory: URL) {
@@ -41,6 +42,10 @@ final class Store: @unchecked Sendable {
             return .shortcuts
         case .activated:
             return .activated
+        case let .access(allSites):
+            // Read by the setup window, which polls while open: no notification needed.
+            try write(JSONEncoder().encode(["allSites": allSites]), to: accessURL)
+            return nil
         case .ping:
             return nil
         }
@@ -49,6 +54,9 @@ final class Store: @unchecked Sendable {
     func snapshot() -> Snapshot? { read(Snapshot.self, from: stateURL) }
 
     func shortcuts() -> Shortcuts? { read(Shortcuts.self, from: shortcutsURL) }
+
+    /// Whether the extension may run on every website; nil until the extension has reported it.
+    func allSitesAccess() -> Bool? { read([String: Bool].self, from: accessURL)?["allSites"] }
 
     func previewURL(tabId: Int) -> URL? {
         let url = previewURLFor(tabId)

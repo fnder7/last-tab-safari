@@ -98,3 +98,20 @@ test('ackActivated tells the app', async () => {
   await tick();
   assert.deepEqual(sentOfType(f.nativeSent, 'activated'), [{ type: 'activated', tabId: 20 }]);
 });
+
+test('website access is sent on start and again only when it changes', async () => {
+  const f = createFakeBrowser({ allSites: false });
+  createNativeBridge(f.browser, { schedule: () => {} });
+  await tick();
+  await tick();
+  f.fire('tabs.onActivated', { tabId: 1, windowId: 1 });
+  await tick();
+  await tick();
+  assert.deepEqual(sentOfType(f.nativeSent, 'access'), [{ type: 'access', allSites: false }]);
+  f.access.allSites = true;
+  f.fire('permissions.onAdded', { origins: ['<all_urls>'] });
+  await tick();
+  await tick();
+  assert.deepEqual(sentOfType(f.nativeSent, 'access').at(-1), { type: 'access', allSites: true });
+  assert.equal(sentOfType(f.nativeSent, 'access').length, 2);
+});

@@ -89,6 +89,25 @@ export function createNativeBridge(
     if (area === 'local' && SHORTCUT in changes) publishShortcuts(changes[SHORTCUT].newValue);
   });
 
+  // Website access, for the app's setup checklist. Safari doesn't reliably fire permission events
+  // when the user changes access in its settings, so tab switches re-check too; only changes are sent.
+  // Asks about *://*/*: Safari answers false for <all_urls> even with "For other websites: Allow".
+  let lastAccess: boolean | null = null;
+  const publishAccess = () => {
+    Promise.resolve()
+      .then(() => browser.permissions.contains({ origins: ['*://*/*'] }))
+      .then((allSites) => {
+        if (allSites === lastAccess) return;
+        lastAccess = allSites;
+        post({ type: 'access', allSites });
+      })
+      .catch((e) => console.debug('[LastTab] checking website access failed', e));
+  };
+  publishAccess();
+  browser.permissions?.onAdded?.addListener(publishAccess);
+  browser.permissions?.onRemoved?.addListener(publishAccess);
+  browser.tabs.onActivated.addListener(publishAccess);
+
   browser.runtime.onMessage.addListener((message: unknown) => {
     if ((message as { type?: unknown } | null)?.type !== 'app:status') return undefined;
     ensurePort();

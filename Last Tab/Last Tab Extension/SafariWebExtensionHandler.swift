@@ -15,6 +15,9 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         do {
             guard let directory = Store.appGroupDirectory() else { throw NativeMessage.DecodeError() }
             let decoded = try NativeMessage.decode(message)
+            if case let .access(allSites) = decoded {
+                logger.notice("website access: \(allSites ? "every website" : "limited", privacy: .public)")
+            }
             if let notification = try Store(directory: directory).apply(decoded) {
                 CFNotificationCenterPostNotification(
                     CFNotificationCenterGetDarwinNotifyCenter(),

@@ -16,6 +16,8 @@ export type NativeMessage =
   | { type: 'preview'; tabId: number; jpegBase64: string }
   | { type: 'shortcuts'; forward: Combo; reverse: Combo | null }
   | { type: 'activated'; tabId: number }
+  /** Whether Safari lets the extension run on every website (needed for previews). */
+  | { type: 'access'; allSites: boolean }
   | { type: 'ping' };
 
 export type NativeReply = { ok: boolean; appRunning: boolean };

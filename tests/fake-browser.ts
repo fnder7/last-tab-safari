@@ -19,6 +19,8 @@ export type FakeBrowserInit = {
   localData?: Record<string, unknown>;
   /** Reply of the native handler; a function lets a test fail or vary it. */
   nativeReply?: (msg: any) => unknown;
+  // What permissions.contains answers for any-site origins.
+  allSites?: boolean;
 };
 
 type Listener = (...args: any[]) => unknown;
@@ -29,6 +31,7 @@ export function createFakeBrowser({
   sessionData = {},
   localData = {},
   nativeReply = () => ({ ok: true, appRunning: true }),
+  allSites = true,
 }: FakeBrowserInit = {}) {
   const listeners = new Map<string, Listener[]>();
   const event = (path: string) => ({
@@ -42,6 +45,7 @@ export function createFakeBrowser({
   const updateCalls: Array<[number, { active: boolean }]> = [];
   const nativeSent: any[] = [];
   let connects = 0;
+  const access = { allSites };
 
   const fake = {
     tabs: {
@@ -80,6 +84,13 @@ export function createFakeBrowser({
       connectNative(_app: string) {
         connects += 1;
         return { onMessage: event('port.onMessage'), onDisconnect: event('port.onDisconnect') };
+      },
+    },
+    permissions: {
+      onAdded: event('permissions.onAdded'),
+      onRemoved: event('permissions.onRemoved'),
+      async contains(_p: { origins: string[] }) {
+        return access.allSites;
       },
     },
     storage: {
@@ -122,6 +133,7 @@ export function createFakeBrowser({
     session,
     listeners,
     nativeSent,
+    access,
     connects: () => connects,
   };
 }

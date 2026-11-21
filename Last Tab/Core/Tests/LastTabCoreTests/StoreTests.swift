@@ -80,3 +80,14 @@ private let snapshotJSON = #"""
 @Test func unknownMessageThrows() {
     #expect(throws: (any Error).self) { try message(#"{ "type": "nope" }"#) }
 }
+
+@Test func accessRoundTrip() throws {
+    let (store, _) = try tempStore()
+    #expect(store.allSitesAccess() == nil)
+    #expect(try store.apply(message(#"{ "type": "access", "allSites": false }"#)) == nil)
+    #expect(store.allSitesAccess() == false)
+    _ = try store.apply(message(#"{ "type": "access", "allSites": true }"#))
+    #expect(store.allSitesAccess() == true)
+    store.clearAll()
+    #expect(store.allSitesAccess() == true) // survives Safari quitting, unlike tab state
+}

@@ -10,12 +10,52 @@
     <script src="../Script.js" defer></script>
 </head>
 <body>
-    <img src="../Icon.png" width="80" height="80" alt="Last Tab Icon">
-    <p class="state-unknown">You can turn on Last Tab’s extension in Safari Extensions preferences.</p>
-    <p class="state-on">Last Tab’s extension is currently on. You can turn it off in Safari Extensions preferences.</p>
-    <p class="state-off">Last Tab’s extension is currently off. You can turn it on in Safari Extensions preferences.</p>
-    <p class="usage">Hold <kbd>⌥ Option</kbd> and press <kbd>Q</kbd> to switch tabs.</p>
-    <p class="hint">Change the shortcut from the Last Tab button in Safari’s toolbar. For page previews, allow it on every website.</p>
-    <button class="open-preferences">Quit and Open Safari Extensions Preferences…</button>
+    <header>
+        <img src="../Icon.png" width="64" height="64" alt="">
+        <h1>Set up Last Tab</h1>
+        <p class="lead">Three quick steps, and you’re ready.</p>
+    </header>
+
+    <ol class="steps">
+        <li class="step" id="extension">
+            <span class="mark" aria-hidden="true"></span>
+            <div class="body">
+                <h2>Turn on the extension</h2>
+                <p class="todo">In Safari Settings → Extensions, tick <b>Last Tab</b>.</p>
+                <p class="done">The extension is on.</p>
+                <p class="missing">Safari doesn’t list Last Tab? Turn on Safari → Settings → Advanced →
+                    <i>Show features for web developers</i>, then Develop → <b>Allow Unsigned Extensions</b>.</p>
+            </div>
+            <button data-action="open-preferences">Open Settings</button>
+        </li>
+
+        <li class="step" id="websites">
+            <span class="mark" aria-hidden="true"></span>
+            <div class="body">
+                <h2>Allow it on every website</h2>
+                <p class="todo"><b>Edit Websites…</b> → For other websites: <b>Allow</b>.
+                    Needed for page previews.</p>
+                <p class="done">Allowed on every website.</p>
+            </div>
+            <button data-action="open-preferences">Open Settings</button>
+        </li>
+
+        <li class="step" id="login">
+            <span class="mark" aria-hidden="true"></span>
+            <div class="body">
+                <h2>Open at login</h2>
+                <p class="todo">Keeps the shortcut working after a restart.</p>
+                <p class="done">Last Tab starts with your Mac.</p>
+            </div>
+            <button data-action="toggle-login">Turn On</button>
+        </li>
+    </ol>
+
+    <footer>
+        <p class="try">Now in Safari press <kbd id="shortcut">⌥Q</kbd>. Keep holding the modifier
+            to pick a tab, release to switch.</p>
+        <p class="hint">Change the shortcut from the Last Tab button on Safari’s toolbar.</p>
+        <button data-action="close" class="primary">Done</button>
+    </footer>
 </body>
 </html>

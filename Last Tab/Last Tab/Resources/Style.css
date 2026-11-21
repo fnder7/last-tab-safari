@@ -6,8 +6,11 @@
 
 :root {
     color-scheme: light dark;
-
     --spacing: 20px;
+    --accent: -apple-system-control-accent;
+    --done: #34c759;
+    --line: color-mix(in srgb, currentColor 14%, transparent);
+    --muted: color-mix(in srgb, currentColor 60%, transparent);
 }
 
 html {
@@ -16,48 +19,148 @@ html {
 
 body {
     display: flex;
-    align-items: center;
-    justify-content: safe center;
     flex-direction: column;
-
     gap: var(--spacing);
-    margin: 0 calc(var(--spacing) * 2);
-    padding: var(--spacing) 0;
+    margin: 0;
+    padding: 24px 28px;
     box-sizing: border-box;
     min-height: 100%;
-
-    font: -apple-system-short-body;
-    text-align: center;
+    font: -apple-system-body;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
-body:not(.state-on, .state-off) :is(.state-on, .state-off) {
-    display: none;
-}
-
-body.state-on :is(.state-off, .state-unknown) {
-    display: none;
-}
-
-body.state-off :is(.state-on, .state-unknown) {
-    display: none;
-}
-
-button {
-    font-size: 1em;
-}
-
-p {
+h1, h2, p {
     margin: 0;
 }
 
+header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.lead, .hint {
+    color: var(--muted);
+}
+
 .hint {
-    font-size: 0.85em;
-    opacity: 0.6;
+    font-size: 12px;
+}
+
+/* Steps */
+
+.steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    counter-reset: step;
+}
+
+.step {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    align-items: start;
+    gap: 12px;
+    padding: 12px 14px;
+    counter-increment: step;
+}
+
+.step + .step {
+    border-top: 1px solid var(--line);
+}
+
+.step h2 {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.step .body p {
+    color: var(--muted);
+}
+
+.mark {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.mark::before {
+    content: counter(step);
+}
+
+.step.is-done .mark {
+    border-color: var(--done);
+    background: var(--done);
+    color: white;
+}
+
+.step.is-done .mark::before {
+    content: "✓";
+}
+
+.step .done,
+.step.is-done .todo,
+.step .missing,
+.step.is-done button {
+    display: none;
+}
+
+.step.is-done .done,
+.step.is-missing:not(.is-done) .missing {
+    display: block;
+}
+
+.step .missing {
+    margin-top: 6px;
+    font-size: 12px;
+}
+
+/* The login step keeps its button so it can be turned off again. */
+.step#login.is-done button {
+    display: inline-block;
+}
+
+button {
+    font: inherit;
+    white-space: nowrap;
+}
+
+/* Footer */
+
+footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    text-align: center;
+}
+
+footer button {
+    margin-top: 6px;
+    min-width: 96px;
 }
 
 kbd {
     font: inherit;
-    padding: 0 0.35em;
+    font-weight: 600;
+    padding: 0 0.4em;
     border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
     border-radius: 4px;
 }

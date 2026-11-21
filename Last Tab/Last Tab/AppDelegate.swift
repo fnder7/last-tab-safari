@@ -46,7 +46,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// lasttab:// — opened from the extension popup when the app wasn't running.
-    func application(_ application: NSApplication, open urls: [URL]) {}
+    /// lasttab://setup opens the setup checklist.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        if urls.contains(where: { $0.host == "setup" }) { showSetup() }
+    }
 
     private func registerShortcuts() {
         let shortcuts = store?.shortcuts()
