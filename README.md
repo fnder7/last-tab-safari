@@ -62,6 +62,11 @@ Extensions → Last Tab → Settings), click **Forward** and press the new combi
 - While Safari is active the shortcut belongs to Last Tab. If it was a Safari shortcut too, Safari's
   version stops working, and an ⌥ shortcut no longer types its character (⌥ Q: «œ»).
 - **⌃ Tab** can't be used: Safari keeps it for itself.
+- Safari → Settings → Extensions → Last Tab shows a red error: *Invalid `persistent` manifest entry*.
+  You can ignore it: the manifest asks Safari to keep the extension's background script running so
+  the shortcut responds on the first press, and Safari only complains about the format of that request.
+- The **Shortcuts** field on the same page is Safari's own: it opens the Last Tab toolbar popup.
+  It is not the switcher shortcut, which you change in the popup itself.
 
 ## Build from source
 
