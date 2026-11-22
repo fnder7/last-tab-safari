@@ -1,0 +1,35 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        1. Open Safari with three tabs
+        2. Hold ⌥ and press Q
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Last Tab version
+      description: Menu bar icon → About, or the name of the zip you installed.
+      placeholder: "2.1.0"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS and Safari versions
+      placeholder: "macOS 15.2, Safari 18.2"
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Your shortcut, screenshots, or errors from Safari → Settings → Extensions.
