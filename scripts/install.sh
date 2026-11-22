@@ -1,9 +1,9 @@
 #!/bin/bash
 # Installs the latest Last Tab release into /Applications (or $INSTALL_DIR) and opens it.
-#   curl -fsSL https://raw.githubusercontent.com/bi472/last-tab-safari/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/fnder7/last-tab-safari/main/scripts/install.sh | bash
 set -euo pipefail
 
-REPO="bi472/last-tab-safari"
+REPO="fnder7/last-tab-safari"
 APP="Last Tab.app"
 INSTALL_DIR="${INSTALL_DIR:-/Applications}"
 DEST="$INSTALL_DIR/$APP"
