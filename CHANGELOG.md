@@ -3,7 +3,7 @@
 Versions follow [semver](https://semver.org): patch for fixes, minor for new features,
 major for changes that break existing behaviour (for example, the default shortcut).
 
-## Unreleased
+## 2.1.1 — 2026-11-22
 
 - Fixed: tab previews could vanish when coming back to Safari. Each Safari profile now keeps its own
   tab list and previews, and the strip shows the profile you used last.
