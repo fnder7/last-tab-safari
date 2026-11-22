@@ -14,10 +14,16 @@ Requirements: Xcode and Node.js with npm. The app runs on macOS 14 Sonoma or lat
 
 ```bash
 npm install
-xcodebuild -project "Last Tab/Last Tab.xcodeproj" -scheme "Last Tab" -configuration Debug \
-  -derivedDataPath build -allowProvisioningUpdates build
-open "build/Build/Products/Debug/Last Tab.app"
+scripts/dev-install.sh
 ```
+
+The script builds Debug into `build/`, installs the app into `/Applications` (set `INSTALL_DIR` to
+change that, `CONFIGURATION=Release` for a release build) and opens it. Then it unregisters and
+deletes the build copy. Keep only one copy of Last Tab on the Mac: Xcode registers every app it
+builds with Launch Services, and Safari then runs the extension once per registered copy. The
+copies get their own tab ids and storage but share the app's App Group, so they overwrite each
+other's tab list and previews. The script warns when it finds another registered copy. If you run
+the app from Xcode or from `build/`, remove the `/Applications` copy first.
 
 The project is signed with a Personal Team (`DEVELOPMENT_TEAM` in the Xcode project). To build with
 your own Apple ID, pick your team under Xcode → target → **Signing & Capabilities** for both targets.
