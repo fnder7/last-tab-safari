@@ -23,11 +23,15 @@ function twoTabWindow(extra: Parameters<typeof createFakeBrowser>[0] = {}) {
 function sink() {
   const snapshots: SnapshotMessage[] = [];
   const previews: Array<[number, string]> = [];
-  const activateHandlers: Array<(tabId: number) => void> = [];
+  const previewProfiles: string[] = [];
+  const activateHandlers: Array<(tabId: number, profile: string | undefined) => void> = [];
   const acks: number[] = [];
   const bridge: SnapshotSink = {
     publishSnapshot: (s) => void snapshots.push(s),
-    publishPreview: (tabId, dataUrl) => void previews.push([tabId, dataUrl]),
+    publishPreview: (profile, tabId, dataUrl) => {
+      previewProfiles.push(profile);
+      previews.push([tabId, dataUrl]);
+    },
     onActivate: (fn) => void activateHandlers.push(fn),
     ackActivated: (tabId) => void acks.push(tabId),
   };
@@ -35,10 +39,11 @@ function sink() {
     bridge,
     snapshots,
     previews,
+    previewProfiles,
     acks,
     last: () => snapshots.at(-1)!,
     ids: (windowId = 1) => snapshots.at(-1)!.windows[String(windowId)]?.tabs.map((t) => t.id),
-    activateFromApp: (tabId: number) => activateHandlers.forEach((fn) => fn(tabId)),
+    activateFromApp: (tabId: number, profile?: string) => activateHandlers.forEach((fn) => fn(tabId, profile)),
   };
 }
 
@@ -317,4 +322,80 @@ test('private tabs are never captured', async () => {
   await timers.runAll(c);
   assert.deepEqual(captured, []);
   assert.deepEqual(out.previews, []);
+});
+
+test('previews survive the background being reloaded', async () => {
+  const f = twoTabWindow();
+  const timers = withTimers();
+  const first = createController(f.browser, { capture: async () => 'data:x', schedule: timers.schedule, bridge: sink().bridge });
+  setActive(f, 20);
+  f.fire('tabs.onUpdated', 20, { status: 'complete' }, { id: 20, windowId: 1, active: true });
+  await timers.runAll(first);
+
+  // Safari unloads the idle background and starts it again: memory is gone, session storage is not.
+  assert.deepEqual(f.session.previewIds, [20]);
+  const g = twoTabWindow({ sessionData: structuredClone(f.session) });
+  const out = sink();
+  const second = createController(g.browser, { schedule: timers.schedule, bridge: out.bridge });
+  await second.ready;
+  assert.equal(out.last().windows['1'].tabs.find((t) => t.id === 20)?.hasPreview, true);
+  assert.equal(out.last().windows['1'].tabs.find((t) => t.id === 10)?.hasPreview, false);
+});
+
+// --- profiles -------------------------------------------------------------
+
+test('makes a profile id once and keeps it', async () => {
+  const f = twoTabWindow();
+  const out = sink();
+  await createController(f.browser, { bridge: out.bridge, newProfileId: () => 'p-new' }).ready;
+  assert.equal(f.local.profileId, 'p-new');
+  assert.equal(out.last().profile, 'p-new');
+
+  const again = sink();
+  await createController(f.browser, { bridge: again.bridge, newProfileId: () => 'p-other' }).ready;
+  assert.equal(again.last().profile, 'p-new');
+});
+
+test('focusing a window stamps the snapshot and survives a reload', async () => {
+  const f = twoTabWindow({ localData: { profileId: 'p1' } });
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge, now: () => 5000 });
+  await c.ready;
+  assert.equal(out.last().focusedAt, 0);
+  f.fire('windows.onFocusChanged', 1);
+  await c.idle();
+  assert.equal(out.last().focusedAt, 5000);
+  f.fire('windows.onFocusChanged', -1); // focus left this profile: keep the stamp
+  await c.idle();
+  assert.equal(out.last().focusedAt, 5000);
+
+  const g = twoTabWindow({ localData: { profileId: 'p1' }, sessionData: structuredClone(f.session) });
+  const reloaded = sink();
+  await createController(g.browser, { bridge: reloaded.bridge }).ready;
+  assert.equal(reloaded.last().focusedAt, 5000);
+});
+
+test('previews go out with the profile', async () => {
+  const f = twoTabWindow({ localData: { profileId: 'p1' } });
+  const timers = withTimers();
+  const out = sink();
+  const c = createController(f.browser, { capture: async () => 'data:x', schedule: timers.schedule, bridge: out.bridge });
+  f.fire('tabs.onUpdated', 10, { status: 'complete' }, { id: 10, windowId: 1, active: true });
+  await timers.runAll(c);
+  assert.deepEqual(out.previewProfiles, ['p1']);
+});
+
+test('activate meant for another profile is left to it', async () => {
+  const f = twoTabWindow({ localData: { profileId: 'p1' } });
+  const out = sink();
+  const c = createController(f.browser, { bridge: out.bridge });
+  await c.ready;
+  out.activateFromApp(20, 'p2');
+  await c.idle();
+  assert.deepEqual(f.updateCalls, []);
+  assert.deepEqual(out.acks, []);
+  out.activateFromApp(20, 'p1');
+  await c.idle();
+  assert.deepEqual(f.updateCalls, [[20, { active: true }]]);
+  assert.deepEqual(out.acks, [20]);
 });

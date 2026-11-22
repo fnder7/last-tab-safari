@@ -21,25 +21,34 @@ final class SwitcherController {
     private var showTimer: Timer?
     private var panelVisible = false
     private var awaitingAck: (tabId: Int, retried: Bool)?
+    /// Profile of the snapshot the strip shows: previews and switches belong to it.
+    private final class Profile { var id = "" }
+    private let profile = Profile()
     private var ackTimer: Timer?
 
     init(store: Store?, hotKeys: HotKeyCenter) {
         self.store = store
         self.hotKeys = hotKeys
-        panel = SwitcherPanel { tabId in
-            store?.previewURL(tabId: tabId).flatMap(NSImage.init(contentsOf:))
+        panel = SwitcherPanel { [profile] tabId in
+            store?.previewURL(profile: profile.id, tabId: tabId).flatMap(NSImage.init(contentsOf:))
         }
     }
 
     func press(reverse: Bool, combo: Combo) {
         if !flow.isOpen { opener = combo }
-        run(flow.press(reverse: reverse, opener: combo, snapshot: store?.snapshot()))
+        run(flow.press(reverse: reverse, opener: combo, snapshot: loadSnapshot()))
     }
 
     /// Safari stopped being the active app.
     func blur() { handle(.blur) }
 
-    func snapshotChanged() { run(flow.snapshotChanged(store?.snapshot())) }
+    func snapshotChanged() { run(flow.snapshotChanged(loadSnapshot())) }
+
+    private func loadSnapshot() -> Snapshot? {
+        let snapshot = store?.snapshot()
+        if let snapshot { profile.id = snapshot.profile }
+        return snapshot
+    }
 
     /// The extension confirmed a switch.
     func acknowledged() {
@@ -100,7 +109,7 @@ final class SwitcherController {
     private func activate(_ tabId: Int, retried: Bool) {
         awaitingAck = (tabId, retried)
         SFSafariApplication.dispatchMessage(withName: "activate", toExtensionWithIdentifier: extensionBundleIdentifier,
-                                            userInfo: ["tabId": tabId]) { [logger] error in
+                                            userInfo: ["tabId": tabId, "profile": profile.id]) { [logger] error in
             if let error { logger.error("dispatchMessage failed: \(error.localizedDescription, privacy: .public)") }
         }
         ackTimer?.invalidate()

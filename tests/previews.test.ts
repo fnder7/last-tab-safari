@@ -1,33 +1,35 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createPreviewCache } from '../src/background/previews.ts';
+import { createPreviewIds } from '../src/background/previews.ts';
 
-test('set/get/delete', () => {
-  const cache = createPreviewCache();
-  cache.set(1, 'a');
-  assert.equal(cache.get(1), 'a');
-  cache.delete(1);
-  assert.equal(cache.get(1), undefined);
-  assert.equal(cache.size, 0);
+test('add/has/delete', () => {
+  const ids = createPreviewIds();
+  ids.add(1);
+  assert.ok(ids.has(1));
+  ids.delete(1);
+  assert.ok(!ids.has(1));
+  assert.equal(ids.size, 0);
 });
 
 test('evicts oldest when full', () => {
-  const cache = createPreviewCache({ maxEntries: 2 });
-  cache.set(1, 'a');
-  cache.set(2, 'b');
-  cache.set(3, 'c');
-  assert.equal(cache.get(1), undefined);
-  assert.equal(cache.get(2), 'b');
-  assert.equal(cache.get(3), 'c');
-  assert.equal(cache.size, 2);
+  const ids = createPreviewIds([], { maxEntries: 2 });
+  ids.add(1);
+  ids.add(2);
+  ids.add(3);
+  assert.deepEqual(ids.toJSON(), [2, 3]);
 });
 
-test('re-set refreshes age', () => {
-  const cache = createPreviewCache({ maxEntries: 2 });
-  cache.set(1, 'a');
-  cache.set(2, 'b');
-  cache.set(1, 'a2');
-  cache.set(3, 'c');
-  assert.equal(cache.get(2), undefined);
-  assert.equal(cache.get(1), 'a2');
+test('re-add refreshes age', () => {
+  const ids = createPreviewIds([], { maxEntries: 2 });
+  ids.add(1);
+  ids.add(2);
+  ids.add(1);
+  ids.add(3);
+  assert.deepEqual(ids.toJSON(), [1, 3]);
+});
+
+test('restores from stored ids, ignoring junk', () => {
+  assert.deepEqual(createPreviewIds([3, 'x', 1.5, 4]).toJSON(), [3, 4]);
+  assert.deepEqual(createPreviewIds(undefined).toJSON(), []);
+  assert.deepEqual(createPreviewIds({ 1: 2 }).toJSON(), []);
 });

@@ -104,8 +104,9 @@ export function createFakeBrowser({
         },
       },
       session: {
-        async get(key: string) {
-          return key in session ? { [key]: structuredClone(session[key]) } : {};
+        async get(keys: string | string[]) {
+          const wanted = (Array.isArray(keys) ? keys : [keys]).filter((k) => k in session);
+          return Object.fromEntries(wanted.map((k) => [k, structuredClone(session[k])]));
         },
         async set(obj: Record<string, unknown>) {
           Object.assign(session, structuredClone(obj));
@@ -131,6 +132,7 @@ export function createFakeBrowser({
     tabs,
     updateCalls,
     session,
+    local,
     listeners,
     nativeSent,
     access,

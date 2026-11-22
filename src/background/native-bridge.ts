@@ -10,8 +10,9 @@ const SNAPSHOT_DEBOUNCE_MS = 100;
 
 export type NativeBridge = {
   publishSnapshot(snapshot: SnapshotMessage): void;
-  publishPreview(tabId: number, dataUrl: string): void;
-  onActivate(fn: (tabId: number) => void): void;
+  publishPreview(profile: string, tabId: number, dataUrl: string): void;
+  /** `profile` is the one the app asks to switch in; absent from older app builds. */
+  onActivate(fn: (tabId: number, profile: string | undefined) => void): void;
   ackActivated(tabId: number): void;
 };
 
@@ -31,7 +32,7 @@ export function createNativeBridge(
   { schedule = (fn: () => void, ms: number) => void setTimeout(fn, ms) }: { schedule?: (fn: () => void, ms: number) => void } = {},
 ): NativeBridge {
   const runtime = browser.runtime as unknown as NativeRuntime;
-  const activateHandlers: Array<(tabId: number) => void> = [];
+  const activateHandlers: Array<(tabId: number, profile: string | undefined) => void> = [];
 
   const send = (message: NativeMessage): Promise<NativeReply | undefined> =>
     Promise.resolve()
@@ -51,10 +52,11 @@ export function createNativeBridge(
       const opened = runtime.connectNative(APP);
       port = opened;
       opened.onMessage.addListener((message) => {
-        const m = message as { name?: unknown; userInfo?: { tabId?: unknown } } | null;
+        const m = message as { name?: unknown; userInfo?: { tabId?: unknown; profile?: unknown } } | null;
         if (m?.name !== 'activate' || typeof m.userInfo?.tabId !== 'number') return; // handler replies, junk
         const tabId = m.userInfo.tabId;
-        activateHandlers.forEach((fn) => fn(tabId));
+        const profile = typeof m.userInfo.profile === 'string' ? m.userInfo.profile : undefined;
+        activateHandlers.forEach((fn) => fn(tabId, profile));
       });
       opened.onDisconnect.addListener(() => {
         if (port === opened) port = null;
@@ -118,7 +120,8 @@ export function createNativeBridge(
 
   return {
     publishSnapshot,
-    publishPreview: (tabId, dataUrl) => post({ type: 'preview', tabId, jpegBase64: dataUrl.slice(dataUrl.indexOf(',') + 1) }),
+    publishPreview: (profile, tabId, dataUrl) =>
+      post({ type: 'preview', profile, tabId, jpegBase64: dataUrl.slice(dataUrl.indexOf(',') + 1) }),
     onActivate: (fn) => void activateHandlers.push(fn),
     ackActivated: (tabId) => post({ type: 'activated', tabId }),
   };
