@@ -1,25 +1,32 @@
-// Pure, bounded in-memory cache of tab previews (data URLs).
+// Pure, bounded set of the tab ids whose preview the app has on disk. Only ids are kept: the
+// images themselves live in the app's cache, and the list is small enough to persist in session
+// storage, so it survives Safari unloading the background.
 
-export type PreviewCache = {
-  get(tabId: number): string | undefined;
-  set(tabId: number, dataUrl: string): void;
+export type PreviewIds = {
+  has(tabId: number): boolean;
+  add(tabId: number): void;
   delete(tabId: number): void;
+  /** Oldest first; feed back to `createPreviewIds` to restore. */
+  toJSON(): number[];
   readonly size: number;
 };
 
-export function createPreviewCache({ maxEntries = 50 }: { maxEntries?: number } = {}): PreviewCache {
-  // Map keeps insertion order: the first key is the least recently set.
-  const entries = new Map<number, string>();
+export function createPreviewIds(initial: unknown = [], { maxEntries = 50 }: { maxEntries?: number } = {}): PreviewIds {
+  // Set keeps insertion order: the first id is the least recently added.
+  const ids = new Set<number>();
+  const add = (tabId: number) => {
+    ids.delete(tabId);
+    ids.add(tabId);
+    while (ids.size > maxEntries) ids.delete(ids.values().next().value!);
+  };
+  if (Array.isArray(initial)) for (const id of initial) if (Number.isInteger(id)) add(id);
   return {
-    get: (tabId) => entries.get(tabId),
-    set(tabId, dataUrl) {
-      entries.delete(tabId);
-      entries.set(tabId, dataUrl);
-      while (entries.size > maxEntries) entries.delete(entries.keys().next().value!);
-    },
-    delete: (tabId) => void entries.delete(tabId),
+    has: (tabId) => ids.has(tabId),
+    add,
+    delete: (tabId) => void ids.delete(tabId),
+    toJSON: () => [...ids],
     get size() {
-      return entries.size;
+      return ids.size;
     },
   };
 }

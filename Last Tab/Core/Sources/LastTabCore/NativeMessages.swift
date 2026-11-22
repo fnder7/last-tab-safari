@@ -17,6 +17,11 @@ struct WindowTabs: Codable, Equatable, Sendable {
 struct Snapshot: Codable, Equatable, Sendable {
     var focusedWindowId: Int?
     var windows: [String: WindowTabs]
+    /// The Safari profile that sent it; each profile runs its own extension background.
+    /// Empty from extension builds that predate profiles.
+    var profile: String = ""
+    /// When a window of that profile last got focus (ms since epoch).
+    var focusedAt: Double = 0
 
     /// Tabs of the focused window in MRU order, as the menu shows them.
     var focusedTabs: [MenuTab] {
@@ -24,6 +29,18 @@ struct Snapshot: Codable, Equatable, Sendable {
         return window.tabs.map {
             MenuTab(id: $0.id, title: $0.title, favIconURL: $0.favIconUrl.flatMap(URL.init(string:)), hasPreview: $0.hasPreview)
         }
+    }
+}
+
+extension Snapshot {
+    private enum CodingKeys: String, CodingKey { case focusedWindowId, windows, profile, focusedAt }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        focusedWindowId = try c.decodeIfPresent(Int.self, forKey: .focusedWindowId)
+        windows = try c.decode([String: WindowTabs].self, forKey: .windows)
+        profile = try c.decodeIfPresent(String.self, forKey: .profile) ?? ""
+        focusedAt = try c.decodeIfPresent(Double.self, forKey: .focusedAt) ?? 0
     }
 }
 
@@ -35,7 +52,7 @@ struct Shortcuts: Codable, Equatable, Sendable {
 
 enum NativeMessage: Equatable, Sendable {
     case snapshot(Snapshot)
-    case preview(tabId: Int, jpeg: Data)
+    case preview(profile: String, tabId: Int, jpeg: Data)
     case shortcuts(Shortcuts)
     case activated(tabId: Int)
     /// Whether Safari lets the extension run on every website.
@@ -54,10 +71,10 @@ enum NativeMessage: Equatable, Sendable {
         case "snapshot":
             return .snapshot(try decoder.decode(Snapshot.self, from: data))
         case "preview":
-            struct Preview: Decodable { var tabId: Int; var jpegBase64: String }
+            struct Preview: Decodable { var profile: String?; var tabId: Int; var jpegBase64: String }
             let preview = try decoder.decode(Preview.self, from: data)
             guard let jpeg = Data(base64Encoded: preview.jpegBase64) else { throw DecodeError() }
-            return .preview(tabId: preview.tabId, jpeg: jpeg)
+            return .preview(profile: preview.profile ?? "", tabId: preview.tabId, jpeg: jpeg)
         case "shortcuts":
             return .shortcuts(try decoder.decode(Shortcuts.self, from: data))
         case "activated":

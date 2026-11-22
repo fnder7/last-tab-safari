@@ -5,8 +5,8 @@ import * as mru from './mru.ts';
 import type { MruState } from './mru.ts';
 import type { NativeBridge } from './native-bridge.ts';
 import type { SnapshotMessage } from '../shared/native.ts';
-import { MRU_STATE } from '../shared/storage-keys.ts';
-import { createPreviewCache } from './previews.ts';
+import { FOCUSED_AT, MRU_STATE, PREVIEW_IDS, PROFILE_ID } from '../shared/storage-keys.ts';
+import { createPreviewIds } from './previews.ts';
 
 /** Wait after activation / load so the page has painted before capturing. */
 const CAPTURE_DELAY_MS = 300;
@@ -23,6 +23,10 @@ export type ControllerOptions = {
   schedule?: (fn: () => void, ms: number) => void;
   /** Where snapshots and previews go. Without it nothing is published. */
   bridge?: SnapshotSink;
+  /** Current time in ms; defaults to Date.now. */
+  now?: () => number;
+  /** Makes this profile's id the first time; defaults to crypto.randomUUID. */
+  newProfileId?: () => string;
 };
 
 export type Controller = {
@@ -45,9 +49,13 @@ export function createController(browser: Browser, options: ControllerOptions = 
   const capture = options.capture ?? (() => Promise.reject(new Error('capture disabled')));
   const schedule = options.schedule ?? ((fn, ms) => void setTimeout(fn, ms));
   const bridge = options.bridge;
-  const previews = createPreviewCache();
+  const now = options.now ?? Date.now;
+  const newProfileId = options.newProfileId ?? (() => crypto.randomUUID());
+  let previews = createPreviewIds();
   let state: MruState = mru.emptyState();
   let focusedWindowId: number | null = null;
+  let focusedAt = 0;
+  let profile = '';
 
   async function captureInto(windowId: number, tabId: number): Promise<void> {
     let dataUrl: string;
@@ -57,9 +65,12 @@ export function createController(browser: Browser, options: ControllerOptions = 
       console.debug('[LastTab] capture failed', e);
       return;
     }
-    previews.set(tabId, dataUrl);
-    bridge?.publishPreview(tabId, dataUrl);
-    enqueue(publish);
+    enqueue(async () => {
+      bridge?.publishPreview(profile, tabId, dataUrl);
+      previews.add(tabId);
+      await savePreviews();
+      await publish();
+    });
   }
 
   /** Captures `tabId` later, only if it is still the active tab of its window by then. */
@@ -74,6 +85,7 @@ export function createController(browser: Browser, options: ControllerOptions = 
   }
 
   const save = () => browser.storage.session.set({ [MRU_STATE]: state });
+  const savePreviews = () => browser.storage.session.set({ [PREVIEW_IDS]: previews.toJSON() });
 
   /** Sends every window's tabs in MRU order (private windows left out). */
   async function publish(): Promise<void> {
@@ -90,17 +102,23 @@ export function createController(browser: Browser, options: ControllerOptions = 
           id: t.id!,
           title: t.title ?? '',
           favIconUrl: t.favIconUrl ?? null,
-          hasPreview: previews.get(t.id!) !== undefined,
+          hasPreview: previews.has(t.id!),
         })),
       };
     }
-    bridge.publishSnapshot({ type: 'snapshot', focusedWindowId, windows });
+    bridge.publishSnapshot({ type: 'snapshot', profile, focusedAt, focusedWindowId, windows });
   }
 
   async function load(): Promise<void> {
+    const stored = (await browser.storage.local.get(PROFILE_ID))[PROFILE_ID];
+    profile = typeof stored === 'string' && stored !== '' ? stored : newProfileId();
+    if (profile !== stored) await browser.storage.local.set({ [PROFILE_ID]: profile });
     focusedWindowId = (await browser.windows.getLastFocused()).id ?? null;
-    const data = await browser.storage.session.get(MRU_STATE);
+    const data = await browser.storage.session.get([MRU_STATE, PREVIEW_IDS, FOCUSED_AT]);
+    if (typeof data[FOCUSED_AT] === 'number') focusedAt = data[FOCUSED_AT];
     state = mru.normalize(data[MRU_STATE]);
+    // Safari unloads an idle background: the app still has these previews on disk.
+    previews = createPreviewIds(data[PREVIEW_IDS]);
     // Seed every open window (e.g. restored at launch) that has no entry yet.
     const activeTabs = await browser.tabs.query({ active: true });
     const unseeded = activeTabs.filter((t) => !(String(t.windowId) in state));
@@ -140,7 +158,10 @@ export function createController(browser: Browser, options: ControllerOptions = 
     captureLater(windowId, tabId);
   });
   browser.tabs.onRemoved.addListener((tabId, { windowId, isWindowClosing }) => {
-    previews.delete(tabId);
+    enqueue(async () => {
+      previews.delete(tabId);
+      await savePreviews();
+    });
     apply((s) => (isWindowClosing ? mru.onWindowRemoved(s, windowId) : mru.onTabRemoved(s, windowId, tabId)));
   });
   browser.tabs.onDetached.addListener((tabId, { oldWindowId }) => {
@@ -154,11 +175,23 @@ export function createController(browser: Browser, options: ControllerOptions = 
     apply((s) => mru.onWindowRemoved(s, windowId));
   });
   browser.windows.onFocusChanged.addListener((windowId) => {
-    if (windowId === WINDOW_ID_NONE) return; // focus left Safari: the app keeps the last window
-    focusedWindowId = windowId;
-    enqueue(publish);
+    // Focus left Safari or went to another profile's window: the app keeps showing whichever
+    // profile was focused last, so this one just keeps its window.
+    if (windowId === WINDOW_ID_NONE) return;
+    const at = now();
+    enqueue(async () => {
+      focusedWindowId = windowId;
+      focusedAt = at;
+      await browser.storage.session.set({ [FOCUSED_AT]: focusedAt });
+      await publish();
+    });
   });
-  bridge?.onActivate((tabId) => void enqueue(() => activateTab(tabId)));
+  bridge?.onActivate((tabId, target) => {
+    // Every profile's background hears the request; only the one it is meant for answers.
+    void enqueue(async () => {
+      if (target === undefined || target === profile) await activateTab(tabId);
+    });
+  });
 
   async function idle(): Promise<void> {
     let seen: Promise<void>;
