@@ -8,3 +8,6 @@ dist/
 release/
 .build/
 .swiftpm/
+
+# Internal agent plans and specs
+docs/superpowers/
