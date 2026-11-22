@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/bi472/last-tab-safari/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/bi472/last-tab-safari?label=release&color=blue"></a>
-  <a href="https://github.com/bi472/last-tab-safari/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/bi472/last-tab-safari/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/fnder7/last-tab-safari/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/fnder7/last-tab-safari?label=release&color=blue"></a>
+  <a href="https://github.com/fnder7/last-tab-safari/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/fnder7/last-tab-safari/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-000?logo=apple">
   <img alt="Safari" src="https://img.shields.io/badge/Safari-Web%20Extension-1E90FF?logo=safari&logoColor=white">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
@@ -63,7 +63,7 @@ It works everywhere in Safari: on websites, the Start Page, Safari's own pages a
 Paste this into Terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bi472/last-tab-safari/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/fnder7/last-tab-safari/main/scripts/install.sh | bash
 ```
 
 It downloads the latest release into `/Applications`, clears the download quarantine and opens
